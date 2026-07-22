@@ -1,15 +1,26 @@
-import { ArrowUpRight, Bike, CalendarDays, Camera, Map, Route, WalletCards } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowRight,
+  Bike,
+  CalendarDays,
+  Car,
+  MapPin,
+  Mountain,
+  Plane,
+  Users,
+  Waves,
+} from "lucide-react";
 import tripsData from "@/content/trips.json";
+import itinerary from "@/content/epirus-2026.json";
 import type { Trip } from "@/lib/types";
 
-const trips = tripsData as Trip[];
-const featuredTrip = trips[0];
+const trip = (tripsData as Trip[])[0];
+const firstDay = itinerary.chapters[0].days[0];
 
-const sections = [
-  { icon: Route, label: "Roadbook", text: "Daily stages, towns, stops and scenic roads." },
-  { icon: Map, label: "Places", text: "Hotels, restaurants, viewpoints and discoveries." },
-  { icon: WalletCards, label: "Budget", text: "Planned and actual costs in one clear view." },
-  { icon: Camera, label: "Journal", text: "Photos, notes and memories arranged by day." },
+const chapters = [
+  { number: "01", title: "Epirus", note: "One week on the road", icon: Mountain },
+  { number: "02", title: "Athens", note: "The city chapter", icon: MapPin },
+  { number: "03", title: "Crete", note: "Island finale", icon: Waves },
 ];
 
 export default function HomePage() {
@@ -17,91 +28,111 @@ export default function HomePage() {
     <main>
       <header className="site-header">
         <a className="brand" href="#top" aria-label="Two Wheels, One Way home">
-          <span className="brand-mark"><Bike size={20} /></span>
+          <span className="brand-mark"><Bike size={19} /></span>
           <span>Two Wheels, One Way</span>
         </a>
         <nav aria-label="Primary navigation">
-          <a href="#journeys">Journeys</a>
-          <a href="#archive">Archive</a>
-          <a href="#about">Our story</a>
+          <a href="#journey">Journey</a>
+          <a href="#day-one">Day one</a>
+          <a href="#chapters">Chapters</a>
         </nav>
       </header>
 
-      <section className="hero" id="top">
+      <section className="hero greece-hero" id="top">
         <div className="hero-noise" />
+        <div className="sun-disc" aria-hidden="true" />
         <div className="hero-content">
-          <p className="eyebrow">PRIVATE TRAVEL DOCUMENTARY</p>
-          <h1>Every road becomes<br /><em>part of our story.</em></h1>
+          <p className="eyebrow">SEPTEMBER 2026 · GREECE</p>
+          <h1>Four friends.<br /><em>One long way south.</em></h1>
           <p className="hero-copy">
-            A living archive of the places we visit, the roads we follow and the moments we never want to lose.
+            Denmark to Thessaloniki. Across the mountains to Ioannina. A week through Epirus, then Athens, Crete and home.
           </p>
-          <a className="primary-button" href="#journeys">
-            Open the journey <ArrowUpRight size={18} />
+          <a className="primary-button" href="#journey">
+            Enter the journey <ArrowRight size={18} />
           </a>
         </div>
-        <div className="route-line" aria-hidden="true"><span /></div>
-        <div className="hero-index">
-          <span>01</span>
-          <span>Roads</span>
-          <span>Memories</span>
+        <div className="hero-route" aria-label="Journey route">
+          <span>Copenhagen</span><i />
+          <span>Thessaloniki</span><i />
+          <span>Ioannina</span><i />
+          <span>Athens</span><i />
+          <span>Crete</span>
         </div>
       </section>
 
-      <section className="intro" id="journeys">
-        <div>
-          <p className="eyebrow dark">THE CURRENT CHAPTER</p>
-          <h2>{featuredTrip.title}</h2>
+      <section className="journey-overview" id="journey">
+        <div className="section-kicker">
+          <p className="eyebrow dark">THE 2026 JOURNEY</p>
+          <span className="status">{trip.status}</span>
         </div>
-        <p>{featuredTrip.summary}</p>
+        <div className="journey-title-grid">
+          <h2>{trip.title}</h2>
+          <p>{trip.summary}</p>
+        </div>
+        <div className="facts-grid">
+          <article><CalendarDays /><span>Date</span><strong>5 September 2026</strong></article>
+          <article><Users /><span>Travellers</span><strong>Two couples · four people</strong></article>
+          <article><Plane /><span>Arrival</span><strong>Thessaloniki Airport</strong></article>
+          <article><Car /><span>Road trip</span><strong>Rental car through Epirus</strong></article>
+        </div>
       </section>
 
-      <section className="trip-card">
-        <div className="trip-visual">
-          <div className="compass-ring">N</div>
-          <div className="trip-number">2026</div>
-          <div className="road-streak road-streak-one" />
-          <div className="road-streak road-streak-two" />
-        </div>
-        <div className="trip-details">
-          <span className="status">{featuredTrip.status}</span>
-          <h3>{featuredTrip.subtitle}</h3>
-          <div className="trip-meta">
-            <div><CalendarDays size={18} /><span>Dates coming soon</span></div>
-            <div><Map size={18} /><span>{featuredTrip.origin}</span></div>
-            <div><Bike size={18} /><span>{featuredTrip.travellers} travellers</span></div>
+      <section className="day-one" id="day-one">
+        <div className="day-one-poster">
+          <span className="poster-index">DAY 01</span>
+          <div>
+            <p>5 SEPTEMBER 2026</p>
+            <h2>{firstDay.title}</h2>
+            <span>Denmark → Thessaloniki → Ioannina</span>
           </div>
-          <div className="tag-row">
-            {featuredTrip.tags.map((tag) => <span key={tag}>{tag}</span>)}
+        </div>
+
+        <div className="day-one-content">
+          <p className="eyebrow dark">THE FIRST CHAPTER</p>
+          <h3>{firstDay.summary}</h3>
+          <div className="timeline">
+            {firstDay.stops.map((stop, index) => (
+              <article key={stop.title}>
+                <div className="timeline-marker"><span>{String(index + 1).padStart(2, "0")}</span></div>
+                <div>
+                  <small>{stop.time}</small>
+                  <h4>{stop.title}</h4>
+                  <p>{stop.detail}</p>
+                </div>
+              </article>
+            ))}
           </div>
-          <button className="ghost-button" type="button">View trip workspace <ArrowUpRight size={17} /></button>
+          <Link className="text-link" href="/trips/epirus-athens-crete-2026">
+            Open the full roadbook <ArrowRight size={17} />
+          </Link>
         </div>
       </section>
 
-      <section className="system" id="archive">
+      <section className="chapter-section" id="chapters">
         <div className="section-heading">
-          <p className="eyebrow dark">BUILT FOR THE WHOLE JOURNEY</p>
-          <h2>Plan it. Live it. Remember it.</h2>
+          <p className="eyebrow dark">THREE LANDSCAPES · ONE STORY</p>
+          <h2>The chapters ahead.</h2>
         </div>
-        <div className="feature-grid">
-          {sections.map(({ icon: Icon, label, text }, index) => (
-            <article key={label}>
-              <span className="feature-number">0{index + 1}</span>
-              <Icon size={24} />
-              <h3>{label}</h3>
-              <p>{text}</p>
+        <div className="chapter-grid">
+          {chapters.map(({ number, title, note, icon: Icon }) => (
+            <article key={title}>
+              <div className="chapter-top"><span>{number}</span><Icon size={24} /></div>
+              <h3>{title}</h3>
+              <p>{note}</p>
+              <span className="chapter-state">Planning</span>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="quote" id="about">
-        <p>“We are not collecting destinations. We are collecting chapters.”</p>
-        <span>— Two Wheels, One Way</span>
+      <section className="quote">
+        <p>“The trip starts long before the wheels begin to move.”</p>
+        <span>GREECE · SEPTEMBER 2026</span>
       </section>
 
       <footer>
-        <div className="brand"><span className="brand-mark"><Bike size={20} /></span><span>Two Wheels, One Way</span></div>
-        <p>Private archive · Built for our journeys</p>
+        <div className="brand"><span className="brand-mark"><Bike size={19} /></span><span>Two Wheels, One Way</span></div>
+        <p>Our private travel archive · Chapter one in progress</p>
       </footer>
     </main>
   );
