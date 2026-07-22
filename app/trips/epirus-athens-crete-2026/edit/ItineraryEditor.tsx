@@ -24,7 +24,12 @@ export default function ItineraryEditor() {
   }, []);
 
   function updateChapter(index: number, patch: Partial<Chapter>) {
-    setData((current) => ({ ...current, chapters: current.chapters.map((chapter, i) => i === index ? { ...chapter, ...patch } : chapter) }));
+    setData((current) => ({
+      ...current,
+      chapters: current.chapters.map((chapter, i) =>
+        i === index ? { ...chapter, ...patch } : chapter
+      ),
+    }));
   }
 
   function updateDay(chapterIndex: number, dayIndex: number, patch: Partial<Day>) {
@@ -38,15 +43,36 @@ export default function ItineraryEditor() {
   }
 
   function addDay(chapterIndex: number) {
-    const chapter = data.chapters[chapterIndex];
-    updateChapter(chapterIndex, {
-      days: [...chapter.days, { date: "Date pending", title: "New day", summary: "Add the plan for this day.", stops: [] }],
-    });
+    setData((current) => ({
+      ...current,
+      chapters: current.chapters.map((chapter, index) =>
+        index === chapterIndex
+          ? {
+              ...chapter,
+              days: [
+                ...chapter.days,
+                {
+                  date: "Date pending",
+                  title: "New day",
+                  summary: "Add the plan for this day.",
+                  stops: [],
+                },
+              ],
+            }
+          : chapter
+      ),
+    }));
   }
 
   function removeDay(chapterIndex: number, dayIndex: number) {
-    const chapter = data.chapters[chapterIndex];
-    updateChapter(chapterIndex, { days: chapter.days.filter((_, index) => index !== dayIndex) });
+    setData((current) => ({
+      ...current,
+      chapters: current.chapters.map((chapter, index) =>
+        index === chapterIndex
+          ? { ...chapter, days: chapter.days.filter((_, i) => i !== dayIndex) }
+          : chapter
+      ),
+    }));
   }
 
   function save() {
@@ -70,8 +96,8 @@ export default function ItineraryEditor() {
       <header className="editor-header">
         <Link href="/trips/epirus-athens-crete-2026"><ArrowLeft size={17} /> Back to journey</Link>
         <div>
-          <button onClick={download} className="editor-secondary"><Download size={17} /> Export JSON</button>
-          <button onClick={save} className="editor-save"><Save size={17} /> {saved ? "Saved" : "Save changes"}</button>
+          <button type="button" onClick={download} className="editor-secondary"><Download size={17} /> Export JSON</button>
+          <button type="button" onClick={save} className="editor-save"><Save size={17} /> {saved ? "Saved" : "Save changes"}</button>
         </div>
       </header>
 
@@ -82,22 +108,22 @@ export default function ItineraryEditor() {
       </section>
 
       <section className="editor-shell">
-        <label>Journey headline<input value={data.headline} onChange={(e) => setData({ ...data, headline: e.target.value })} /></label>
+        <label>Journey headline<input value={data.headline} onChange={(e) => setData((current) => ({ ...current, headline: e.target.value }))} /></label>
         <div className="editor-two-column">
-          <label>Dates<input value={data.dates} onChange={(e) => setData({ ...data, dates: e.target.value })} /></label>
-          <label>Travellers<input value={data.travellers} onChange={(e) => setData({ ...data, travellers: e.target.value })} /></label>
+          <label>Dates<input value={data.dates} onChange={(e) => setData((current) => ({ ...current, dates: e.target.value }))} /></label>
+          <label>Travellers<input value={data.travellers} onChange={(e) => setData((current) => ({ ...current, travellers: e.target.value }))} /></label>
         </div>
 
         {data.chapters.map((chapter, chapterIndex) => (
-          <section className="editor-chapter" key={`${chapter.number}-${chapterIndex}`}>
+          <section className="editor-chapter" key={`chapter-${chapterIndex}`}>
             <div className="editor-two-column">
               <label>Chapter title<input value={chapter.title} onChange={(e) => updateChapter(chapterIndex, { title: e.target.value })} /></label>
               <label>Region<input value={chapter.region} onChange={(e) => updateChapter(chapterIndex, { region: e.target.value })} /></label>
             </div>
 
             {chapter.days.map((day, dayIndex) => (
-              <article className="editor-day" key={`${day.date}-${dayIndex}`}>
-                <button className="delete-day" onClick={() => removeDay(chapterIndex, dayIndex)} aria-label="Delete day"><Trash2 size={17} /></button>
+              <article className="editor-day" key={`day-${chapterIndex}-${dayIndex}`}>
+                <button type="button" className="delete-day" onClick={() => removeDay(chapterIndex, dayIndex)} aria-label="Delete day"><Trash2 size={17} /></button>
                 <div className="editor-two-column">
                   <label>Date<input value={day.date} onChange={(e) => updateDay(chapterIndex, dayIndex, { date: e.target.value })} /></label>
                   <label>Day title<input value={day.title} onChange={(e) => updateDay(chapterIndex, dayIndex, { title: e.target.value })} /></label>
@@ -106,7 +132,7 @@ export default function ItineraryEditor() {
               </article>
             ))}
 
-            <button className="add-day" onClick={() => addDay(chapterIndex)}><Plus size={17} /> Add day</button>
+            <button type="button" className="add-day" onClick={() => addDay(chapterIndex)}><Plus size={17} /> Add day</button>
           </section>
         ))}
       </section>
