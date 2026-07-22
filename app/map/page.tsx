@@ -21,15 +21,21 @@ type Place = {
   dayTitle?: string;
 };
 type SearchResult = { id: string; name: string; displayName: string; lat: number; lng: number; type: string };
+type RouteSegment = {
+  fromId: string;
+  toId: string;
+  coordinates: [number, number][] | null;
+  distanceKm?: number;
+  durationMinutes?: number;
+  mode: "road" | "direct";
+};
 type LeafletMap = {
   remove: () => void;
   fitBounds: (bounds: unknown, options?: unknown) => void;
   setView: (center: [number, number], zoom: number) => void;
 };
 
-declare global {
-  interface Window { L?: any; }
-}
+declare global { interface Window { L?: any } }
 
 const PLACES_KEY = "two-wheels-one-way:map:places";
 const ITINERARY_KEY = "two-wheels-one-way:epirus-2026";
@@ -58,15 +64,19 @@ function isValidPlace(value: unknown): value is Place {
 function isValidItinerary(value: unknown): value is Itinerary {
   if (!value || typeof value !== "object") return false;
   const candidate = value as { chapters?: unknown };
-  return Array.isArray(candidate.chapters) && candidate.chapters.every((chapter) => {
-    if (!chapter || typeof chapter !== "object") return false;
-    return Array.isArray((chapter as { days?: unknown }).days);
-  });
+  return Array.isArray(candidate.chapters) && candidate.chapters.every((chapter) =>
+    !!chapter && typeof chapter === "object" && Array.isArray((chapter as { days?: unknown }).days)
+  );
 }
 
 function makeId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
   return `place-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function directOnly(from: Place, to: Place) {
+  const text = `${from.dayTitle ?? ""} ${to.dayTitle ?? ""} ${from.note} ${to.note}`.toLowerCase();
+  return /\b(fly|flight|ferry|boat)\b/.test(text);
 }
 
 export default function MapPage() {
@@ -75,6 +85,8 @@ export default function MapPage() {
   const markerRefs = useRef<Record<string, any>>({});
   const [itinerary, setItinerary] = useState<Itinerary>(initialItinerary);
   const [places, setPlaces] = useState<Place[]>(defaultPlaces);
+  const [segments, setSegments] = useState<RouteSegment[]>([]);
+  const [routing, setRouting] = useState(false);
   const [selected, setSelected] = useState(defaultPlaces[0].id);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -89,7 +101,7 @@ export default function MapPage() {
     mapInstance.current = null;
     markerRefs.current = {};
     if (!current) return;
-    try { current.remove(); } catch { /* already removed by React or Leaflet */ }
+    try { current.remove(); } catch {}
     if (mapElement.current) {
       mapElement.current.innerHTML = "";
       delete (mapElement.current as HTMLDivElement & { _leaflet_id?: number })._leaflet_id;
@@ -112,37 +124,63 @@ export default function MapPage() {
           else localStorage.removeItem(PLACES_KEY);
         }
       }
-    } catch {
-      localStorage.removeItem(PLACES_KEY);
-    }
+    } catch { localStorage.removeItem(PLACES_KEY); }
   }, []);
 
   useEffect(() => {
-    try { localStorage.setItem(PLACES_KEY, JSON.stringify(places)); } catch { /* storage may be unavailable */ }
+    try { localStorage.setItem(PLACES_KEY, JSON.stringify(places)); } catch {}
   }, [places]);
 
-  const days = useMemo(() => {
-    if (!Array.isArray(itinerary.chapters)) return [];
-    return itinerary.chapters.flatMap((chapter) =>
-      Array.isArray(chapter.days) ? chapter.days.map((day: Day, dayIndex: number) => ({
-        id: `${chapter.number}-${dayIndex}`,
-        chapterNumber: chapter.number,
-        chapterTitle: chapter.title,
-        date: day.date,
-        title: day.title,
-        summary: day.summary,
-      })) : []
-    );
-  }, [itinerary]);
+  const days = useMemo(() => itinerary.chapters.flatMap((chapter) =>
+    Array.isArray(chapter.days) ? chapter.days.map((day: Day, dayIndex: number) => ({
+      id: `${chapter.number}-${dayIndex}`,
+      chapterNumber: chapter.number,
+      chapterTitle: chapter.title,
+      date: day.date,
+      title: day.title,
+      summary: day.summary,
+    })) : []
+  ), [itinerary]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function buildRoutes() {
+      const pairs = places.slice(0, -1).map((from, index) => ({ from, to: places[index + 1] }));
+      setRouting(true);
+      const next = await Promise.all(pairs.map(async ({ from, to }): Promise<RouteSegment> => {
+        if (directOnly(from, to)) return { fromId: from.id, toId: to.id, coordinates: null, mode: "direct" };
+        try {
+          const response = await fetch(`/api/route?from=${from.lat},${from.lng}&to=${to.lat},${to.lng}`);
+          const payload = await response.json();
+          if (payload.route?.coordinates?.length) {
+            return {
+              fromId: from.id,
+              toId: to.id,
+              coordinates: payload.route.coordinates,
+              distanceKm: payload.route.distanceKm,
+              durationMinutes: payload.route.durationMinutes,
+              mode: "road",
+            };
+          }
+        } catch {}
+        return { fromId: from.id, toId: to.id, coordinates: null, mode: "direct" };
+      }));
+      if (!cancelled) {
+        setSegments(next);
+        setRouting(false);
+      }
+    }
+    if (places.length > 1) buildRoutes();
+    else setSegments([]);
+    return () => { cancelled = true; };
+  }, [places]);
 
   useEffect(() => {
     let cancelled = false;
     setMapError("");
-
-    const cssId = "leaflet-css";
-    if (!document.getElementById(cssId)) {
+    if (!document.getElementById("leaflet-css")) {
       const link = document.createElement("link");
-      link.id = cssId;
+      link.id = "leaflet-css";
       link.rel = "stylesheet";
       link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
       document.head.appendChild(link);
@@ -156,25 +194,38 @@ export default function MapPage() {
         const map = L.map(mapElement.current, { scrollWheelZoom: true }).setView([38.8, 22.2], 6);
         mapInstance.current = map;
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "&copy; OpenStreetMap contributors",
+          attribution: "&copy; OpenStreetMap contributors · routes by OSRM",
           maxZoom: 19,
         }).addTo(map);
 
         const validPlaces = places.filter(isValidPlace);
-        const coordinates: [number, number][] = validPlaces.map((place) => [place.lat, place.lng]);
+        const bounds: [number, number][] = validPlaces.map((place) => [place.lat, place.lng]);
         validPlaces.forEach((place, index) => {
-          const details = [
+          const marker = L.marker([place.lat, place.lng]).addTo(map).bindPopup([
             `<strong>${index + 1}. ${place.name}</strong>`,
             place.dayDate ? `<small>${place.dayDate}</small>` : "",
             place.dayTitle ? `<br>${place.dayTitle}` : "",
             place.note ? `<br>${place.note}` : "",
-          ].join("");
-          const marker = L.marker([place.lat, place.lng]).addTo(map).bindPopup(details);
+          ].join(""));
           marker.on("click", () => setSelected(place.id));
           markerRefs.current[place.id] = marker;
         });
-        if (coordinates.length > 1) L.polyline(coordinates, { color: "#b95532", weight: 4, opacity: .85 }).addTo(map);
-        if (coordinates.length) map.fitBounds(L.latLngBounds(coordinates), { padding: [35, 35] });
+
+        segments.forEach((segment) => {
+          const from = validPlaces.find((place) => place.id === segment.fromId);
+          const to = validPlaces.find((place) => place.id === segment.toId);
+          if (!from || !to) return;
+          if (segment.mode === "road" && segment.coordinates?.length) {
+            L.polyline(segment.coordinates, { color: "#b95532", weight: 4, opacity: .88 }).addTo(map)
+              .bindTooltip(`${segment.distanceKm ?? ""} km · ${segment.durationMinutes ?? ""} min`);
+          } else {
+            L.polyline([[from.lat, from.lng], [to.lat, to.lng]], {
+              color: "#777267", weight: 2.5, opacity: .8, dashArray: "8 10",
+            }).addTo(map).bindTooltip("Flight, ferry or route unavailable");
+          }
+        });
+
+        if (bounds.length) map.fitBounds(L.latLngBounds(bounds), { padding: [35, 35] });
         window.setTimeout(() => { if (!cancelled) map.invalidateSize?.(); }, 100);
       } catch {
         destroyMap();
@@ -202,12 +253,8 @@ export default function MapPage() {
         destroyMap();
       };
     }
-
-    return () => {
-      cancelled = true;
-      destroyMap();
-    };
-  }, [places]);
+    return () => { cancelled = true; destroyMap(); };
+  }, [places, segments]);
 
   useEffect(() => {
     const place = places.find((item) => item.id === selected);
@@ -215,7 +262,7 @@ export default function MapPage() {
     try {
       mapInstance.current.setView([place.lat, place.lng], 11);
       markerRefs.current[place.id]?.openPopup?.();
-    } catch { /* map may be rebuilding */ }
+    } catch {}
   }, [selected, places]);
 
   async function searchPlaces(event?: React.FormEvent) {
@@ -234,26 +281,18 @@ export default function MapPage() {
       ) : [];
       setResults(safeResults);
       if (!safeResults.length) setSearchError("No matching places found. Try a nearby town or a more specific name.");
-    } catch {
-      setSearchError("Place search is temporarily unavailable. Please try again.");
-    } finally {
-      setSearching(false);
-    }
+    } catch { setSearchError("Place search is temporarily unavailable. Please try again."); }
+    finally { setSearching(false); }
   }
 
   function addSearchResult(result: SearchResult) {
     const day = days.find((item) => item.id === selectedDay);
     const place: Place = {
-      id: makeId(),
-      name: result.name,
-      displayName: result.displayName,
-      lat: result.lat,
-      lng: result.lng,
+      id: makeId(), name: result.name, displayName: result.displayName,
+      lat: result.lat, lng: result.lng,
       note: note.trim() || day?.summary || "Saved destination",
-      chapterNumber: day?.chapterNumber,
-      chapterTitle: day?.chapterTitle,
-      dayDate: day?.date,
-      dayTitle: day?.title,
+      chapterNumber: day?.chapterNumber, chapterTitle: day?.chapterTitle,
+      dayDate: day?.date, dayTitle: day?.title,
     };
     setPlaces((current) => [...current, place]);
     setSelected(place.id);
@@ -271,6 +310,9 @@ export default function MapPage() {
   }
 
   const selectedPlace = places.find((place) => place.id === selected);
+  const roadSegments = segments.filter((segment) => segment.mode === "road");
+  const totalDistance = roadSegments.reduce((sum, segment) => sum + (segment.distanceKm ?? 0), 0);
+  const totalMinutes = roadSegments.reduce((sum, segment) => sum + (segment.durationMinutes ?? 0), 0);
 
   return (
     <main className="archive-page workspace-page">
@@ -282,17 +324,22 @@ export default function MapPage() {
       <section className="archive-page-hero compact-archive-hero">
         <p className="eyebrow dark">ONE CONNECTED MAP</p>
         <h1>Every road,<br />in one place.</h1>
-        <p>Search a location by name, link it to a journey day and let the route update automatically.</p>
+        <p>Driving stages follow the real road network. Flights, ferries and unavailable routes appear as dashed connections.</p>
       </section>
 
       <section className="interactive-map-layout">
         <div className="map-canvas-wrap">
           <div ref={mapElement} className="leaflet-map" aria-label="Interactive Greece route map" />
+          {routing && <div className="map-routing-status"><Loader2 className="spin" size={16} /> Calculating road routes…</div>}
           {mapError && <div className="map-fallback"><MapPin size={25} /><p>{mapError}</p><button type="button" onClick={() => window.location.reload()}>Reload map</button></div>}
         </div>
 
         <aside className="map-control-panel">
           <div className="workspace-heading"><Route size={23} /><div><p className="eyebrow dark">CURRENT ROUTE</p><h2>Greece 2026</h2></div></div>
+          <div className="route-summary">
+            <span><strong>{Math.round(totalDistance)}</strong> road km</span>
+            <span><strong>{Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m</strong> estimated drive</span>
+          </div>
 
           <form className="map-search-panel" onSubmit={searchPlaces}>
             <p className="eyebrow dark">SEARCH & ADD LOCATION</p>
@@ -306,24 +353,18 @@ export default function MapPage() {
             </select>
             <textarea rows={2} placeholder="Optional note" value={note} onChange={(event) => setNote(event.target.value)} />
             {searchError && <p className="map-search-error">{searchError}</p>}
-            {results.length > 0 && <div className="map-search-results">
-              {results.map((result) => (
-                <button type="button" key={result.id} onClick={() => addSearchResult(result)}>
-                  <MapPin size={17} />
-                  <span><strong>{result.name}</strong><small>{result.displayName}</small></span>
-                  <Plus size={16} />
-                </button>
-              ))}
-            </div>}
+            {results.length > 0 && <div className="map-search-results">{results.map((result) => (
+              <button type="button" key={result.id} onClick={() => addSearchResult(result)}>
+                <MapPin size={17} /><span><strong>{result.name}</strong><small>{result.displayName}</small></span><Plus size={16} />
+              </button>
+            ))}</div>}
           </form>
 
-          <div className="map-place-list">
-            {places.map((place, index) => (
-              <button type="button" className={selected === place.id ? "active" : ""} key={place.id} onClick={() => setSelected(place.id)}>
-                <span>{String(index + 1).padStart(2, "0")}</span><div><strong>{place.name}</strong><small>{place.dayDate ? `${place.dayDate} · ${place.dayTitle}` : place.note || `${place.lat}, ${place.lng}`}</small></div><MapPin size={17} />
-              </button>
-            ))}
-          </div>
+          <div className="map-place-list">{places.map((place, index) => (
+            <button type="button" className={selected === place.id ? "active" : ""} key={place.id} onClick={() => setSelected(place.id)}>
+              <span>{String(index + 1).padStart(2, "0")}</span><div><strong>{place.name}</strong><small>{place.dayDate ? `${place.dayDate} · ${place.dayTitle}` : place.note}</small></div><MapPin size={17} />
+            </button>
+          ))}</div>
 
           {selectedPlace && <div className="selected-place-card">
             <p className="eyebrow dark">SELECTED PLACE</p>
