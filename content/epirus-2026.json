@@ -1,0 +1,48 @@
+{
+  "tripSlug": "epirus-athens-crete-2026",
+  "headline": "From the mountains of Epirus to the sea of Crete",
+  "dates": "5 September 2026 — return date pending",
+  "travellers": "Two couples · four travellers",
+  "chapters": [
+    {
+      "number": "01",
+      "title": "The road to Epirus",
+      "region": "Thessaloniki → Ioannina",
+      "status": "confirmed",
+      "days": [
+        {
+          "date": "5 September 2026",
+          "title": "The adventure begins",
+          "summary": "Fly from Denmark to Thessaloniki, collect the rental car and cross northern Greece to our first night in Ioannina.",
+          "stops": [
+            { "type": "flight", "time": "Time pending", "title": "Fly from Denmark", "detail": "Arrival at Thessaloniki Airport (SKG)" },
+            { "type": "car", "time": "After landing", "title": "Collect the rental car", "detail": "Rental company and vehicle pending" },
+            { "type": "drive", "time": "Approx. 3 hours", "title": "Drive to Ioannina", "detail": "Thessaloniki → Ioannina" },
+            { "type": "stay", "time": "Evening", "title": "Check in at the Airbnb", "detail": "Ioannina · booking details pending" }
+          ]
+        }
+      ]
+    },
+    {
+      "number": "02",
+      "title": "A week through Epirus",
+      "region": "Mountains, villages and rivers",
+      "status": "planning",
+      "days": []
+    },
+    {
+      "number": "03",
+      "title": "Athens",
+      "region": "The city chapter",
+      "status": "planning",
+      "days": []
+    },
+    {
+      "number": "04",
+      "title": "Crete",
+      "region": "The final island chapter",
+      "status": "planning",
+      "days": []
+    }
+  ]
+}
