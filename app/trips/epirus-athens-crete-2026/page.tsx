@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, BedDouble, Car, CheckCircle2, Circle, Plane, Route } from "lucide-react";
 import itinerary from "@/content/epirus-2026.json";
+import "./roadbook.css";
 
 const icons = {
   flight: Plane,
