@@ -6,6 +6,7 @@ import {
   Camera,
   Map,
   MapPin,
+  PackageCheck,
   Route,
 } from "lucide-react";
 import tripsData from "@/content/trips.json";
@@ -18,6 +19,7 @@ const archiveFeatures = [
   { href: "/roadbooks", icon: Route, title: "Journey roadbooks", text: "The plans, daily stages and routes behind every trip." },
   { href: "/stories", icon: Camera, title: "Stories and photographs", text: "A journal that grows from planning notes into finished memories." },
   { href: "/map", icon: Map, title: "One connected map", text: "Every place, road and return journey collected over time." },
+  { href: "/packing", icon: PackageCheck, title: "Packing and preparation", text: "A shared departure checklist for documents, equipment and everything needed on the road." },
 ];
 
 export default function HomePage() {
