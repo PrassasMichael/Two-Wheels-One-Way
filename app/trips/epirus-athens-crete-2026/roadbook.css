@@ -1,0 +1,39 @@
+.roadbook-page { background: var(--paper); min-height: 100vh; }
+.roadbook-hero { min-height: 70vh; position: relative; overflow: hidden; color: white; padding: 36px clamp(24px, 7vw, 110px) 80px; display: flex; align-items: end; background: radial-gradient(circle at 78% 24%, rgba(216,145,79,.26), transparent 19%), linear-gradient(120deg, rgba(12,15,12,.98), rgba(26,33,26,.88) 58%, rgba(79,73,55,.7)), linear-gradient(150deg, #11150f, #68735f); }
+.roadbook-hero::after { content: ''; position: absolute; inset: 38% -8% -20% 26%; background: linear-gradient(155deg, transparent 33%, rgba(16,22,17,.86) 33.4%, rgba(29,38,29,.96) 60%, transparent 60.4%); }
+.back-link { position: absolute; z-index: 3; top: 30px; left: clamp(24px, 7vw, 110px); display: inline-flex; gap: 9px; align-items: center; color: rgba(255,255,255,.74); font-size: 14px; }
+.roadbook-hero-content { position: relative; z-index: 2; max-width: 880px; }
+.roadbook-hero-content h1 { margin-bottom: 22px; }
+.roadbook-hero-content > p:not(.eyebrow) { max-width: 680px; color: rgba(255,255,255,.74); font-size: 19px; line-height: 1.7; }
+.roadbook-meta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 30px; }
+.roadbook-meta span { border: 1px solid rgba(255,255,255,.24); padding: 10px 13px; font-size: 12px; letter-spacing: .08em; }
+.roadbook-layout { width: min(1180px, calc(100% - 48px)); margin: 0 auto; display: grid; grid-template-columns: 310px 1fr; gap: 70px; padding: 100px 0 120px; }
+.roadbook-layout aside { position: sticky; top: 30px; align-self: start; }
+.chapter-nav-item { display: grid; grid-template-columns: 34px 1fr 20px; gap: 12px; align-items: start; padding: 19px 0; border-bottom: 1px solid var(--line); }
+.chapter-nav-item > span { color: var(--rust); font-size: 12px; }
+.chapter-nav-item strong, .chapter-nav-item small { display: block; }
+.chapter-nav-item small { color: var(--muted); margin-top: 5px; line-height: 1.4; }
+.chapter-nav-item svg { color: var(--rust); }
+.roadbook-heading { padding-bottom: 34px; border-bottom: 1px solid var(--line); }
+.roadbook-heading h2 { margin-bottom: 12px; }
+.roadbook-heading > p:last-child { color: var(--muted); }
+.roadbook-day-card { background: var(--cream); padding: clamp(28px, 5vw, 60px); margin-top: 38px; box-shadow: 0 22px 65px rgba(37,32,25,.07); }
+.roadbook-date { display: flex; gap: 15px; align-items: center; margin-bottom: 38px; }
+.roadbook-date > span { font-family: 'Playfair Display', serif; font-size: 68px; line-height: 1; color: var(--rust); }
+.roadbook-date strong, .roadbook-date small { display: block; }
+.roadbook-date small { color: var(--muted); margin-top: 4px; }
+.roadbook-day-card > h3 { font-family: 'Playfair Display', serif; font-size: clamp(34px, 4vw, 52px); margin-bottom: 16px; }
+.roadbook-summary { color: var(--muted); font-size: 17px; line-height: 1.75; max-width: 690px; }
+.roadbook-stops { margin-top: 46px; }
+.roadbook-stop { display: grid; grid-template-columns: 46px 1fr; gap: 16px; position: relative; padding-bottom: 32px; }
+.roadbook-stop:not(:last-child)::after { content: ''; position: absolute; left: 22px; top: 45px; bottom: 0; width: 1px; background: var(--line); }
+.stop-icon { width: 45px; height: 45px; border-radius: 50%; background: var(--ink); color: white; display: grid; place-items: center; z-index: 1; }
+.roadbook-stop small { color: var(--rust); text-transform: uppercase; letter-spacing: .11em; }
+.roadbook-stop h4 { font-size: 19px; margin: 7px 0 5px; }
+.roadbook-stop p { color: var(--muted); margin: 0; }
+.pending-panel { margin-top: 46px; padding: 38px; border: 1px solid var(--line); }
+.pending-panel h3 { font-family: 'Playfair Display', serif; font-size: 31px; max-width: 600px; }
+.pending-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; }
+.pending-grid span { background: rgba(255,255,255,.45); padding: 14px; color: var(--muted); font-size: 14px; }
+@media (max-width: 850px) { .roadbook-layout { grid-template-columns: 1fr; gap: 45px; } .roadbook-layout aside { position: static; } }
+@media (max-width: 540px) { .roadbook-layout { width: calc(100% - 28px); padding-top: 70px; } .roadbook-hero { min-height: 78vh; padding-inline: 20px; } .back-link { left: 20px; } .pending-grid { grid-template-columns: 1fr; } .roadbook-day-card { padding: 28px 22px; } }
