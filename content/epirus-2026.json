@@ -25,24 +25,100 @@
     },
     {
       "number": "02",
-      "title": "A week through Epirus",
-      "region": "Mountains, villages and rivers",
+      "title": "Road-tripping through Epirus",
+      "region": "Tzoumerka, Zagori, Sivota, Parga and Lefkada",
       "status": "planning",
-      "days": []
+      "days": [
+        {
+          "date": "6 September 2026",
+          "title": "Tzoumerka day trip",
+          "summary": "Explore Tzoumerka and return to Ioannina for the night.",
+          "stops": [
+            { "type": "drive", "time": "Morning", "title": "Drive to Tzoumerka", "detail": "Ioannina → Tzoumerka" },
+            { "type": "drive", "time": "Evening", "title": "Return to Ioannina", "detail": "Tzoumerka → Ioannina" },
+            { "type": "stay", "time": "Night", "title": "Stay in Ioannina", "detail": "Airbnb details pending" }
+          ]
+        },
+        {
+          "date": "7 September 2026",
+          "title": "Zagorochoria day trip",
+          "summary": "Visit the stone villages of Zagorochoria and return to Ioannina.",
+          "stops": [
+            { "type": "drive", "time": "Morning", "title": "Drive to Zagorochoria", "detail": "Ioannina → Zagorochoria" },
+            { "type": "drive", "time": "Evening", "title": "Return to Ioannina", "detail": "Zagorochoria → Ioannina" },
+            { "type": "stay", "time": "Night", "title": "Stay in Ioannina", "detail": "Airbnb details pending" }
+          ]
+        },
+        {
+          "date": "8 September 2026",
+          "title": "To Sivota and Parga",
+          "summary": "Leave Ioannina and continue west to the Ionian coast, visiting Sivota and Parga.",
+          "stops": [
+            { "type": "drive", "time": "Morning", "title": "Drive to Sivota", "detail": "Ioannina → Sivota" },
+            { "type": "drive", "time": "Later", "title": "Continue to Parga", "detail": "Sivota → Parga" },
+            { "type": "stay", "time": "Night", "title": "Overnight stop", "detail": "Location and accommodation pending" }
+          ]
+        },
+        {
+          "date": "9 September 2026",
+          "title": "Open road day",
+          "summary": "A flexible day between Parga and the next stage of the journey.",
+          "stops": [
+            { "type": "drive", "time": "Flexible", "title": "Explore the Ionian coast", "detail": "Exact route and overnight stop pending" }
+          ]
+        },
+        {
+          "date": "10 September 2026",
+          "title": "Lefkada",
+          "summary": "Continue the road trip to Lefkada.",
+          "stops": [
+            { "type": "drive", "time": "Morning", "title": "Drive to Lefkada", "detail": "Departure point pending → Lefkada" },
+            { "type": "stay", "time": "Night", "title": "Stay in Lefkada", "detail": "Accommodation pending" }
+          ]
+        }
+      ]
     },
     {
       "number": "03",
       "title": "Athens",
       "region": "The city chapter",
       "status": "planning",
-      "days": []
+      "days": [
+        {
+          "date": "11 September 2026",
+          "title": "Travel to Athens",
+          "summary": "Leave Lefkada and continue to Athens for the city chapter of the trip.",
+          "stops": [
+            { "type": "drive", "time": "Time pending", "title": "Travel to Athens", "detail": "Lefkada → Athens" },
+            { "type": "stay", "time": "Night", "title": "Check in in Athens", "detail": "Accommodation pending" }
+          ]
+        },
+        {
+          "date": "12–14 September 2026",
+          "title": "Athens stay",
+          "summary": "Three days in Athens before continuing to Crete.",
+          "stops": [
+            { "type": "stay", "time": "Three days", "title": "Explore Athens", "detail": "Daily plans, restaurants and activities pending" }
+          ]
+        }
+      ]
     },
     {
       "number": "04",
       "title": "Crete",
       "region": "The final island chapter",
       "status": "planning",
-      "days": []
+      "days": [
+        {
+          "date": "15 September 2026",
+          "title": "Continue to Crete",
+          "summary": "Travel from Athens to Crete for the final chapter before returning to Denmark.",
+          "stops": [
+            { "type": "flight", "time": "Time pending", "title": "Travel to Crete", "detail": "Athens → Crete · airport or ferry details pending" },
+            { "type": "stay", "time": "Night", "title": "Arrive in Crete", "detail": "Destination and accommodation pending" }
+          ]
+        }
+      ]
     }
   ]
 }
