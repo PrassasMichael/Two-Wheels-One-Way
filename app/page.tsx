@@ -15,9 +15,9 @@ const trips = tripsData as Trip[];
 const featuredTrip = trips[0];
 
 const archiveFeatures = [
-  { icon: Route, title: "Journey roadbooks", text: "The plans, daily stages and routes behind every trip." },
-  { icon: Camera, title: "Stories and photographs", text: "A journal that grows from planning notes into finished memories." },
-  { icon: Map, title: "One connected map", text: "Every place, road and return journey collected over time." },
+  { href: "/roadbooks", icon: Route, title: "Journey roadbooks", text: "The plans, daily stages and routes behind every trip." },
+  { href: "/stories", icon: Camera, title: "Stories and photographs", text: "A journal that grows from planning notes into finished memories." },
+  { href: "/map", icon: Map, title: "One connected map", text: "Every place, road and return journey collected over time." },
 ];
 
 export default function HomePage() {
@@ -83,12 +83,13 @@ export default function HomePage() {
           <h2>Built for every chapter, not only the next one.</h2>
         </div>
         <div className="chapter-grid archive-feature-grid">
-          {archiveFeatures.map(({ icon: Icon, title, text }, index) => (
-            <article key={title}>
+          {archiveFeatures.map(({ href, icon: Icon, title, text }, index) => (
+            <Link className="archive-feature-card" href={href} key={title}>
               <div className="chapter-top"><span>0{index + 1}</span><Icon size={24} /></div>
               <h3>{title}</h3>
               <p>{text}</p>
-            </article>
+              <span className="feature-open">Open <ArrowRight size={16} /></span>
+            </Link>
           ))}
         </div>
       </section>
