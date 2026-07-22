@@ -56,23 +56,23 @@
           "stops": [
             { "type": "drive", "time": "Morning", "title": "Drive to Sivota", "detail": "Ioannina → Sivota" },
             { "type": "drive", "time": "Later", "title": "Continue to Parga", "detail": "Sivota → Parga" },
-            { "type": "stay", "time": "Night", "title": "Overnight stop", "detail": "Location and accommodation pending" }
+            { "type": "stay", "time": "Night", "title": "Stay in Parga", "detail": "Accommodation pending" }
           ]
         },
         {
           "date": "9 September 2026",
-          "title": "Open road day",
-          "summary": "A flexible day between Parga and the next stage of the journey.",
+          "title": "Parga",
+          "summary": "Enjoy Parga and the surrounding Ionian coast before continuing south the next morning.",
           "stops": [
-            { "type": "drive", "time": "Flexible", "title": "Explore the Ionian coast", "detail": "Exact route and overnight stop pending" }
+            { "type": "stay", "time": "Flexible", "title": "Explore Parga", "detail": "Local plans and activities pending" }
           ]
         },
         {
           "date": "10 September 2026",
-          "title": "Lefkada",
-          "summary": "Continue the road trip to Lefkada.",
+          "title": "Drive from Parga to Lefkada",
+          "summary": "Continue the road trip south by car from Parga to Lefkada.",
           "stops": [
-            { "type": "drive", "time": "Morning", "title": "Drive to Lefkada", "detail": "Departure point pending → Lefkada" },
+            { "type": "drive", "time": "Morning", "title": "Drive to Lefkada", "detail": "Parga → Lefkada" },
             { "type": "stay", "time": "Night", "title": "Stay in Lefkada", "detail": "Accommodation pending" }
           ]
         }
@@ -86,10 +86,10 @@
       "days": [
         {
           "date": "11 September 2026",
-          "title": "Travel to Athens",
-          "summary": "Leave Lefkada and continue to Athens for the city chapter of the trip.",
+          "title": "Drive from Lefkada to Athens",
+          "summary": "Leave Lefkada and drive to Athens for the city chapter of the trip.",
           "stops": [
-            { "type": "drive", "time": "Time pending", "title": "Travel to Athens", "detail": "Lefkada → Athens" },
+            { "type": "drive", "time": "Time pending", "title": "Drive to Athens", "detail": "Lefkada → Athens" },
             { "type": "stay", "time": "Night", "title": "Check in in Athens", "detail": "Accommodation pending" }
           ]
         },
