@@ -1,0 +1,22 @@
+.map-search-panel { display:grid; gap:10px; padding:20px; background:var(--cream); border:1px solid var(--line); }
+.map-search-panel .eyebrow { margin-bottom:4px; }
+.map-search-row { display:grid; grid-template-columns:1fr 46px; gap:8px; }
+.map-search-row button { border:0; background:var(--rust); color:white; display:grid; place-items:center; cursor:pointer; }
+.map-search-row button:disabled { opacity:.45; cursor:not-allowed; }
+.map-search-panel select { width:100%; border:1px solid var(--line); background:var(--cream); color:var(--ink); padding:12px 13px; outline:none; }
+.map-search-panel select:focus { border-color:var(--rust); box-shadow:0 0 0 3px rgba(185,85,50,.08); }
+.map-search-results { display:grid; border:1px solid var(--line); max-height:330px; overflow:auto; }
+.map-search-results button { width:100%; display:grid; grid-template-columns:24px 1fr 20px; gap:10px; align-items:center; padding:13px; border:0; border-bottom:1px solid var(--line); background:white; color:var(--ink); text-align:left; cursor:pointer; }
+.map-search-results button:last-child { border-bottom:0; }
+.map-search-results button:hover { background:var(--paper); }
+.map-search-results button>svg { color:var(--rust); }
+.map-search-results strong,.map-search-results small { display:block; }
+.map-search-results small { color:var(--muted); margin-top:4px; line-height:1.35; }
+.map-search-error { color:var(--rust); font-size:13px; margin:0; }
+.selected-place-date { display:block; color:var(--rust); font-size:12px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:12px; }
+.selected-place-card>small { display:block; color:var(--muted); line-height:1.45; margin-top:12px; }
+.selected-place-actions { display:flex; flex-wrap:wrap; gap:14px; margin-top:18px; }
+.selected-place-actions a,.selected-place-actions button { margin:0 !important; }
+.spin { animation:map-spin .8s linear infinite; }
+@keyframes map-spin { to { transform:rotate(360deg); } }
+@media (max-width:540px) { .map-search-panel { padding:16px; } .map-search-results { max-height:260px; } }
