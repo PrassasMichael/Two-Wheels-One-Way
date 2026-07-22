@@ -21,7 +21,11 @@ type Place = {
   dayTitle?: string;
 };
 type SearchResult = { id: string; name: string; displayName: string; lat: number; lng: number; type: string };
-type LeafletMap = { remove: () => void; fitBounds: (bounds: unknown, options?: unknown) => void; setView: (center: [number, number], zoom: number) => void };
+type LeafletMap = {
+  remove: () => void;
+  fitBounds: (bounds: unknown, options?: unknown) => void;
+  setView: (center: [number, number], zoom: number) => void;
+};
 
 declare global {
   interface Window { L?: any; }
@@ -42,6 +46,29 @@ const defaultPlaces: Place[] = [
   { id: "crete", name: "Crete", lat: 35.2401, lng: 24.8093, note: "Final island chapter", chapterNumber: "04", chapterTitle: "Crete", dayDate: "15 September 2026", dayTitle: "Fly to Crete" },
 ];
 
+function isValidPlace(value: unknown): value is Place {
+  if (!value || typeof value !== "object") return false;
+  const place = value as Partial<Place>;
+  return typeof place.id === "string" && typeof place.name === "string" &&
+    typeof place.lat === "number" && Number.isFinite(place.lat) &&
+    typeof place.lng === "number" && Number.isFinite(place.lng) &&
+    typeof place.note === "string";
+}
+
+function isValidItinerary(value: unknown): value is Itinerary {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as { chapters?: unknown };
+  return Array.isArray(candidate.chapters) && candidate.chapters.every((chapter) => {
+    if (!chapter || typeof chapter !== "object") return false;
+    return Array.isArray((chapter as { days?: unknown }).days);
+  });
+}
+
+function makeId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return `place-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export default function MapPage() {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<LeafletMap | null>(null);
@@ -55,32 +82,63 @@ export default function MapPage() {
   const [searchError, setSearchError] = useState("");
   const [selectedDay, setSelectedDay] = useState("");
   const [note, setNote] = useState("");
+  const [mapError, setMapError] = useState("");
+
+  function destroyMap() {
+    const current = mapInstance.current;
+    mapInstance.current = null;
+    markerRefs.current = {};
+    if (!current) return;
+    try { current.remove(); } catch { /* already removed by React or Leaflet */ }
+    if (mapElement.current) {
+      mapElement.current.innerHTML = "";
+      delete (mapElement.current as HTMLDivElement & { _leaflet_id?: number })._leaflet_id;
+    }
+  }
 
   useEffect(() => {
     try {
       const storedItinerary = localStorage.getItem(ITINERARY_KEY);
-      if (storedItinerary) setItinerary(JSON.parse(storedItinerary));
+      if (storedItinerary) {
+        const parsed = JSON.parse(storedItinerary);
+        if (isValidItinerary(parsed)) setItinerary(parsed);
+      }
       const storedPlaces = localStorage.getItem(PLACES_KEY);
-      if (storedPlaces) setPlaces(JSON.parse(storedPlaces));
-    } catch {}
+      if (storedPlaces) {
+        const parsed = JSON.parse(storedPlaces);
+        if (Array.isArray(parsed)) {
+          const validPlaces = parsed.filter(isValidPlace);
+          if (validPlaces.length) setPlaces(validPlaces);
+          else localStorage.removeItem(PLACES_KEY);
+        }
+      }
+    } catch {
+      localStorage.removeItem(PLACES_KEY);
+    }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(PLACES_KEY, JSON.stringify(places));
+    try { localStorage.setItem(PLACES_KEY, JSON.stringify(places)); } catch { /* storage may be unavailable */ }
   }, [places]);
 
-  const days = useMemo(() => itinerary.chapters.flatMap((chapter) =>
-    chapter.days.map((day: Day, dayIndex: number) => ({
-      id: `${chapter.number}-${dayIndex}`,
-      chapterNumber: chapter.number,
-      chapterTitle: chapter.title,
-      date: day.date,
-      title: day.title,
-      summary: day.summary,
-    }))
-  ), [itinerary]);
+  const days = useMemo(() => {
+    if (!Array.isArray(itinerary.chapters)) return [];
+    return itinerary.chapters.flatMap((chapter) =>
+      Array.isArray(chapter.days) ? chapter.days.map((day: Day, dayIndex: number) => ({
+        id: `${chapter.number}-${dayIndex}`,
+        chapterNumber: chapter.number,
+        chapterTitle: chapter.title,
+        date: day.date,
+        title: day.title,
+        summary: day.summary,
+      })) : []
+    );
+  }, [itinerary]);
 
   useEffect(() => {
+    let cancelled = false;
+    setMapError("");
+
     const cssId = "leaflet-css";
     if (!document.getElementById(cssId)) {
       const link = document.createElement("link");
@@ -91,49 +149,73 @@ export default function MapPage() {
     }
 
     function initialise() {
-      if (!mapElement.current || !window.L) return;
-      mapInstance.current?.remove();
-      markerRefs.current = {};
-      const L = window.L;
-      const map = L.map(mapElement.current, { scrollWheelZoom: true }).setView([38.8, 22.2], 6);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors",
-        maxZoom: 19,
-      }).addTo(map);
+      if (cancelled || !mapElement.current || !window.L) return;
+      try {
+        destroyMap();
+        const L = window.L;
+        const map = L.map(mapElement.current, { scrollWheelZoom: true }).setView([38.8, 22.2], 6);
+        mapInstance.current = map;
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "&copy; OpenStreetMap contributors",
+          maxZoom: 19,
+        }).addTo(map);
 
-      const coordinates = places.map((place) => [place.lat, place.lng]);
-      places.forEach((place, index) => {
-        const details = [
-          `<strong>${index + 1}. ${place.name}</strong>`,
-          place.dayDate ? `<small>${place.dayDate}</small>` : "",
-          place.dayTitle ? `<br>${place.dayTitle}` : "",
-          place.note ? `<br>${place.note}` : "",
-        ].join("");
-        const marker = L.marker([place.lat, place.lng]).addTo(map).bindPopup(details);
-        marker.on("click", () => setSelected(place.id));
-        markerRefs.current[place.id] = marker;
-      });
-      if (coordinates.length > 1) L.polyline(coordinates, { color: "#b95532", weight: 4, opacity: .85 }).addTo(map);
-      if (coordinates.length) map.fitBounds(L.latLngBounds(coordinates), { padding: [35, 35] });
-      mapInstance.current = map;
+        const validPlaces = places.filter(isValidPlace);
+        const coordinates: [number, number][] = validPlaces.map((place) => [place.lat, place.lng]);
+        validPlaces.forEach((place, index) => {
+          const details = [
+            `<strong>${index + 1}. ${place.name}</strong>`,
+            place.dayDate ? `<small>${place.dayDate}</small>` : "",
+            place.dayTitle ? `<br>${place.dayTitle}` : "",
+            place.note ? `<br>${place.note}` : "",
+          ].join("");
+          const marker = L.marker([place.lat, place.lng]).addTo(map).bindPopup(details);
+          marker.on("click", () => setSelected(place.id));
+          markerRefs.current[place.id] = marker;
+        });
+        if (coordinates.length > 1) L.polyline(coordinates, { color: "#b95532", weight: 4, opacity: .85 }).addTo(map);
+        if (coordinates.length) map.fitBounds(L.latLngBounds(coordinates), { padding: [35, 35] });
+        window.setTimeout(() => { if (!cancelled) map.invalidateSize?.(); }, 100);
+      } catch {
+        destroyMap();
+        setMapError("The map could not initialise. Reload the page to try again.");
+      }
     }
 
     if (window.L) initialise();
-    else if (!document.querySelector('script[src*="leaflet.js"]')) {
-      const script = document.createElement("script");
-      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-      script.onload = initialise;
-      document.body.appendChild(script);
+    else {
+      const existing = document.querySelector<HTMLScriptElement>('script[src*="leaflet.js"]');
+      const script = existing ?? document.createElement("script");
+      const onLoad = () => initialise();
+      const onError = () => { if (!cancelled) setMapError("The map library could not be loaded."); };
+      script.addEventListener("load", onLoad, { once: true });
+      script.addEventListener("error", onError, { once: true });
+      if (!existing) {
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.async = true;
+        document.body.appendChild(script);
+      }
+      return () => {
+        cancelled = true;
+        script.removeEventListener("load", onLoad);
+        script.removeEventListener("error", onError);
+        destroyMap();
+      };
     }
 
-    return () => mapInstance.current?.remove();
+    return () => {
+      cancelled = true;
+      destroyMap();
+    };
   }, [places]);
 
   useEffect(() => {
     const place = places.find((item) => item.id === selected);
-    if (!place || !mapInstance.current) return;
-    mapInstance.current.setView([place.lat, place.lng], 11);
-    markerRefs.current[place.id]?.openPopup();
+    if (!place || !mapInstance.current || !isValidPlace(place)) return;
+    try {
+      mapInstance.current.setView([place.lat, place.lng], 11);
+      markerRefs.current[place.id]?.openPopup?.();
+    } catch { /* map may be rebuilding */ }
   }, [selected, places]);
 
   async function searchPlaces(event?: React.FormEvent) {
@@ -147,8 +229,11 @@ export default function MapPage() {
       const response = await fetch(`/api/geocode?q=${encodeURIComponent(cleanQuery)}`);
       if (!response.ok) throw new Error("Search failed");
       const payload = await response.json();
-      setResults(payload.results ?? []);
-      if (!payload.results?.length) setSearchError("No matching places found. Try a nearby town or a more specific name.");
+      const safeResults = Array.isArray(payload.results) ? payload.results.filter((result: SearchResult) =>
+        result && typeof result.name === "string" && Number.isFinite(result.lat) && Number.isFinite(result.lng)
+      ) : [];
+      setResults(safeResults);
+      if (!safeResults.length) setSearchError("No matching places found. Try a nearby town or a more specific name.");
     } catch {
       setSearchError("Place search is temporarily unavailable. Please try again.");
     } finally {
@@ -159,7 +244,7 @@ export default function MapPage() {
   function addSearchResult(result: SearchResult) {
     const day = days.find((item) => item.id === selectedDay);
     const place: Place = {
-      id: crypto.randomUUID(),
+      id: makeId(),
       name: result.name,
       displayName: result.displayName,
       lat: result.lat,
@@ -178,8 +263,11 @@ export default function MapPage() {
   }
 
   function removePlace(id: string) {
-    setPlaces((current) => current.filter((place) => place.id !== id));
-    setSelected((current) => current === id ? places.find((place) => place.id !== id)?.id ?? "" : current);
+    setPlaces((current) => {
+      const next = current.filter((place) => place.id !== id);
+      setSelected((active) => active === id ? next[0]?.id ?? "" : active);
+      return next;
+    });
   }
 
   const selectedPlace = places.find((place) => place.id === selected);
@@ -198,7 +286,10 @@ export default function MapPage() {
       </section>
 
       <section className="interactive-map-layout">
-        <div className="map-canvas-wrap"><div ref={mapElement} className="leaflet-map" aria-label="Interactive Greece route map" /></div>
+        <div className="map-canvas-wrap">
+          <div ref={mapElement} className="leaflet-map" aria-label="Interactive Greece route map" />
+          {mapError && <div className="map-fallback"><MapPin size={25} /><p>{mapError}</p><button type="button" onClick={() => window.location.reload()}>Reload map</button></div>}
+        </div>
 
         <aside className="map-control-panel">
           <div className="workspace-heading"><Route size={23} /><div><p className="eyebrow dark">CURRENT ROUTE</p><h2>Greece 2026</h2></div></div>
@@ -239,7 +330,7 @@ export default function MapPage() {
             <h3>{selectedPlace.name}</h3>
             {selectedPlace.dayDate && <span className="selected-place-date">{selectedPlace.dayDate} · {selectedPlace.dayTitle}</span>}
             <p>{selectedPlace.note}</p>
-            <small>{selectedPlace.displayName}</small>
+            {selectedPlace.displayName && <small>{selectedPlace.displayName}</small>}
             <div className="selected-place-actions">
               <a href={`https://www.openstreetmap.org/?mlat=${selectedPlace.lat}&mlon=${selectedPlace.lng}#map=12/${selectedPlace.lat}/${selectedPlace.lng}`} target="_blank" rel="noreferrer">Open full map <ExternalLink size={15} /></a>
               <button type="button" onClick={() => removePlace(selectedPlace.id)}><Trash2 size={15} /> Remove</button>
