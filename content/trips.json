@@ -1,17 +1,61 @@
 [
   {
-    "id": "trip-2026-placeholder",
-    "slug": "our-next-journey",
-    "title": "Our Next Journey",
-    "subtitle": "The first chapter is waiting to be written.",
+    "id": "greece-september-2026",
+    "slug": "epirus-athens-crete-2026",
+    "title": "Epirus, Athens & Crete",
+    "subtitle": "A September road trip through mainland Greece, followed by Athens and Crete.",
     "year": 2026,
+    "month": "September",
     "status": "planning",
-    "origin": "Copenhagen, Denmark",
-    "destination": "To be decided",
-    "countries": ["Denmark"],
-    "travellers": 2,
-    "transport": "To be decided",
-    "summary": "This is the reusable starting point for this year's vacations. We will replace it with the real plan, route, dates, bookings and memories.",
-    "tags": ["Planning", "2026", "Private documentary"]
+    "origin": "Denmark",
+    "destination": "Crete, Greece",
+    "countries": ["Denmark", "Greece"],
+    "travellers": 4,
+    "travelParty": "Two couples",
+    "transport": "Road trip in Epirus; remaining transport to be confirmed",
+    "summary": "This year's main vacation begins with one week exploring Epirus by road with a friendly couple. After the road trip, the journey continues to Athens, then Crete, with the return flight to Denmark departing from Crete.",
+    "chapters": [
+      {
+        "order": 1,
+        "title": "Epirus Road Trip",
+        "location": "Epirus, Greece",
+        "duration": "Approximately 1 week",
+        "description": "A shared road trip through the mountain landscapes, villages and towns of Epirus with another couple."
+      },
+      {
+        "order": 2,
+        "title": "Athens",
+        "location": "Athens, Greece",
+        "duration": "To be confirmed",
+        "description": "A city stay in Athens after the Epirus road trip."
+      },
+      {
+        "order": 3,
+        "title": "Crete",
+        "location": "Crete, Greece",
+        "duration": "To be confirmed",
+        "description": "The final part of the vacation in Crete before flying back to Denmark."
+      }
+    ],
+    "knownPlan": [
+      "Travel in September 2026",
+      "Four travellers in total",
+      "Approximately one week road-tripping in Epirus",
+      "Continue from Epirus to Athens",
+      "Continue from Athens to Crete",
+      "Return to Denmark from Crete"
+    ],
+    "planningNeeded": [
+      "Exact travel dates",
+      "Arrival point in Greece",
+      "Epirus road-trip route and overnight towns",
+      "Vehicle or rental-car details",
+      "Athens stay length and accommodation",
+      "Transport from Athens to Crete",
+      "Crete base or island route",
+      "Return flight details",
+      "Budget and confirmed bookings"
+    ],
+    "tags": ["Greece", "Epirus", "Athens", "Crete", "Road trip", "September 2026", "Two couples"]
   }
 ]
