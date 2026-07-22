@@ -1,0 +1,17 @@
+[
+  {
+    "id": "trip-2026-placeholder",
+    "slug": "our-next-journey",
+    "title": "Our Next Journey",
+    "subtitle": "The first chapter is waiting to be written.",
+    "year": 2026,
+    "status": "planning",
+    "origin": "Copenhagen, Denmark",
+    "destination": "To be decided",
+    "countries": ["Denmark"],
+    "travellers": 2,
+    "transport": "To be decided",
+    "summary": "This is the reusable starting point for this year's vacations. We will replace it with the real plan, route, dates, bookings and memories.",
+    "tags": ["Planning", "2026", "Private documentary"]
+  }
+]
