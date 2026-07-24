@@ -51,7 +51,11 @@ export default function TripDocumentsPage() {
     try {
       const saved: unknown = JSON.parse(localStorage.getItem(storageKey) || "[]");
       if (Array.isArray(saved)) {
-        const normalized = saved.map(normalizeTripDocument).filter((item): item is TripDocument => Boolean(item));
+        const normalized = saved.reduce<TripDocument[]>((result, value) => {
+          const document = normalizeTripDocument(value);
+          if (document) result.push(document);
+          return result;
+        }, []);
         setDocuments(normalized);
         localStorage.setItem(storageKey, JSON.stringify(normalized));
       }
