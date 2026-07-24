@@ -81,7 +81,15 @@ function ensureFocusedChange(suggestions: Suggestion[], payload: AdvisorPayload)
   if (!target || suggestions.some((item) => item.change?.module === target)) return suggestions;
   const labels = { packing: ["Prepare a practical packing checklist", "Import useful packing items"], budget: ["Build the trip budget", "Import the main cost categories"], documents: ["Prepare the travel wallet", "Import essential reference placeholders"] } as const;
   const [title, action] = labels[target];
-  return [{ priority: "recommended", category: target, title, detail: "The advisor did not return a safely importable change, so a validated starter structure is available instead.", action, change: starterChange(target) }, ...suggestions].slice(0, 8);
+  const fallbackSuggestion: Suggestion = {
+    priority: "recommended",
+    category: target,
+    title,
+    detail: "The advisor did not return a safely importable change, so a validated starter structure is available instead.",
+    action,
+    change: starterChange(target),
+  };
+  return [fallbackSuggestion, ...suggestions].slice(0, 8);
 }
 
 function extractOutputText(data: any): string {
