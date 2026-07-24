@@ -13,45 +13,52 @@ export default async function TripDashboard({ params }: { params: Promise<{ slug
   if (!trip) notFound();
 
   const modules = [
-    { href: "map", icon: Map, title: "Route & saved places", text: "Build this journey's route without affecting any other trip." },
-    { href: "packing", icon: PackageCheck, title: "Packing", text: "A checklist saved only for this journey." },
-    { href: "journal", icon: BookOpen, title: "Journal", text: "Planning notes and memories belonging to this trip." },
-    { href: "budget", icon: Receipt, title: "Budget", text: "Planned and actual costs for this journey." },
-    { href: "documents", icon: FileText, title: "Documents", text: "Bookings, confirmations and travel references." },
+    { href: "map", icon: Map, title: "Route", text: "Build the road and keep every meaningful stop in order." },
+    { href: "packing", icon: PackageCheck, title: "Packing", text: "Prepare the luggage with a checklist made only for this journey." },
+    { href: "journal", icon: BookOpen, title: "Journal", text: "Capture plans before departure and memories from the road." },
+    { href: "budget", icon: Receipt, title: "Budget", text: "Keep planned and actual costs beside the journey they belong to." },
+    { href: "documents", icon: FileText, title: "Documents", text: "Store bookings, insurance and practical travel references." },
   ];
 
+  const focusItems = trip.planningNeeded?.slice(0, 5) ?? ["Confirm exact dates", "Finish the route", "Review the packing list"];
+
   return (
-    <main className="archive-page">
-      <header className="archive-page-header">
+    <main className="v2-page">
+      <header className="v2-page-header">
         <Link href="/trips"><ArrowLeft size={17} /> All journeys</Link>
-        <div className="archive-header-links"><Link href="/">Home</Link></div>
+        <Link href="/">Two Wheels, One Way</Link>
       </header>
 
-      <section className="archive-page-hero compact-archive-hero">
-        <p className="eyebrow dark">{trip.status.toUpperCase()} · {trip.year}</p>
+      <section className="v2-dashboard-hero">
+        <p className="v2-kicker">{trip.status} · {trip.month} {trip.year}</p>
         <h1>{trip.title}</h1>
         <p>{trip.summary}</p>
-        <div className="trip-meta-line">
-          <span><CalendarDays size={17} /> {trip.year}</span>
-          <span><Users size={17} /> {trip.travellers} travellers</span>
+        <div className="v2-meta">
+          <span className="v2-chip"><CalendarDays size={15} /> {trip.month} {trip.year}</span>
+          <span className="v2-chip"><Users size={15} /> {trip.travellers} travellers</span>
         </div>
       </section>
 
-      <section className="chapter-section">
-        <div className="section-heading">
-          <p className="eyebrow dark">TRIP WORKSPACE</p>
-          <h2>Everything here belongs only to this journey.</h2>
-        </div>
-        <div className="chapter-grid archive-feature-grid">
-          {modules.map(({ href, icon: Icon, title, text }, index) => (
-            <Link className="archive-feature-card" href={`/trips/${trip.slug}/${href}`} key={href}>
-              <div className="chapter-top"><span>0{index + 1}</span><Icon size={24} /></div>
+      <section className="v2-dashboard-grid">
+        <div className="v2-module-grid">
+          {modules.map(({ href, icon: Icon, title, text }) => (
+            <Link className="v2-module" href={`/trips/${trip.slug}/${href}`} key={href}>
+              <span className="v2-feature-icon"><Icon size={21} /></span>
               <h3>{title}</h3>
               <p>{text}</p>
-              <span className="feature-open">Open <ArrowRight size={16} /></span>
+              <span>Open module <ArrowRight size={16} /></span>
             </Link>
           ))}
         </div>
+
+        <aside className="v2-focus">
+          <p className="v2-kicker">Planning focus</p>
+          <h2>What needs attention next.</h2>
+          <div className="v2-focus-list">
+            {focusItems.map((item) => <div className="v2-focus-item" key={item}><i /> <span>{item}</span></div>)}
+          </div>
+          <Link className="v2-card-link" href={`/trips/${trip.slug}/journal`}><span>Add a planning note</span><ArrowRight size={17} /></Link>
+        </aside>
       </section>
     </main>
   );
