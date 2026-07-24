@@ -22,10 +22,18 @@ function makeId() {
   return `document-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function isTripDocument(value: unknown): value is TripDocument {
-  if (!value || typeof value !== "object") return false;
+function normalizeTripDocument(value: unknown): TripDocument | null {
+  if (!value || typeof value !== "object") return null;
   const item = value as Partial<TripDocument>;
-  return typeof item.id === "string" && typeof item.title === "string" && typeof item.type === "string" && typeof item.reference === "string" && typeof item.url === "string" && typeof item.notes === "string";
+  if (typeof item.title !== "string" || !item.title.trim()) return null;
+  return {
+    id: typeof item.id === "string" && item.id ? item.id : makeId(),
+    title: item.title.trim(),
+    type: typeof item.type === "string" && item.type ? item.type : "Other",
+    reference: typeof item.reference === "string" ? item.reference : "",
+    url: typeof item.url === "string" ? item.url : "",
+    notes: typeof item.notes === "string" ? item.notes : "Added from AI Trip Advisor",
+  };
 }
 
 export default function TripDocumentsPage() {
@@ -42,7 +50,11 @@ export default function TripDocumentsPage() {
   useEffect(() => {
     try {
       const saved: unknown = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      if (Array.isArray(saved)) setDocuments(saved.filter(isTripDocument));
+      if (Array.isArray(saved)) {
+        const normalized = saved.map(normalizeTripDocument).filter((item): item is TripDocument => Boolean(item));
+        setDocuments(normalized);
+        localStorage.setItem(storageKey, JSON.stringify(normalized));
+      }
     } catch {}
     setLoaded(true);
   }, [storageKey]);
