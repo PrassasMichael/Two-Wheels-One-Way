@@ -16,10 +16,26 @@ function makeId() {
   return `stop-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function isStop(value: unknown): value is Stop {
-  if (!value || typeof value !== "object") return false;
-  const stop = value as Partial<Stop>;
-  return typeof stop.id === "string" && typeof stop.name === "string" && typeof stop.notes === "string";
+function normalizeStop(value: unknown): Stop | null {
+  if (!value || typeof value !== "object") return null;
+  const stop = value as { id?: unknown; name?: unknown; title?: unknown; place?: unknown; notes?: unknown; detail?: unknown };
+  const rawName = typeof stop.name === "string" ? stop.name : typeof stop.title === "string" ? stop.title : typeof stop.place === "string" ? stop.place : "";
+  const name = rawName.trim();
+  if (!name) return null;
+  return {
+    id: typeof stop.id === "string" && stop.id ? stop.id : makeId(),
+    name,
+    notes: typeof stop.notes === "string" ? stop.notes : typeof stop.detail === "string" ? stop.detail : "",
+  };
+}
+
+function normalizeStops(value: unknown): Stop[] {
+  if (!Array.isArray(value)) return [];
+  return value.reduce<Stop[]>((result, item) => {
+    const normalized = normalizeStop(item);
+    if (normalized) result.push(normalized);
+    return result;
+  }, []);
 }
 
 function loadLeaflet(): Promise<any> {
@@ -49,21 +65,18 @@ function loadLeaflet(): Promise<any> {
 }
 
 async function locateStop(stop: Stop): Promise<LocatedStop | null> {
-  const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(stop.name)}`, {
-    headers: { "Accept-Language": "en" },
-  });
+  const response = await fetch(`/api/geocode?q=${encodeURIComponent(stop.name)}`);
   if (!response.ok) return null;
-  const results = await response.json();
-  const match = Array.isArray(results) ? results[0] : null;
-  if (!match) return null;
-  const lat = Number(match.lat);
-  const lon = Number(match.lon);
+  const match = await response.json();
+  const lat = Number(match?.lat);
+  const lon = Number(match?.lon);
   return Number.isFinite(lat) && Number.isFinite(lon) ? { ...stop, lat, lon } : null;
 }
 
 export default function TripMapPage() {
   const { slug } = useParams<{ slug: string }>();
   const storageKey = `two-wheels-one-way:trip:${slug}:route`;
+  const legacyStorageKey = `two-wheels-one-way:trip:${slug}:map`;
   const mapElement = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<any>(null);
   const mapLayer = useRef<any>(null);
@@ -77,13 +90,16 @@ export default function TripMapPage() {
 
   useEffect(() => {
     try {
-      const saved: unknown = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      if (Array.isArray(saved)) setStops(saved.filter(isStop));
+      const current = normalizeStops(JSON.parse(localStorage.getItem(storageKey) || "[]"));
+      const legacy = normalizeStops(JSON.parse(localStorage.getItem(legacyStorageKey) || "[]"));
+      const recovered = current.length ? current : legacy;
+      setStops(recovered);
+      if (recovered.length) localStorage.setItem(storageKey, JSON.stringify(recovered));
     } catch {
       setStops([]);
     }
     setLoaded(true);
-  }, [storageKey]);
+  }, [legacyStorageKey, storageKey]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -94,7 +110,7 @@ export default function TripMapPage() {
     if (!mapElement.current) return;
     if (!stops.length) {
       setLocatedCount(0);
-      setMapMessage("Add at least one named stop to place it on the map.");
+      setMapMessage("No saved route stops were found for this trip. Add a stop below or import a route again.");
       if (mapLayer.current) mapLayer.current.clearLayers();
       return;
     }
@@ -104,14 +120,12 @@ export default function TripMapPage() {
       const L = await loadLeaflet();
       if (!mapInstance.current) {
         mapInstance.current = L.map(mapElement.current, { zoomControl: true }).setView([55.6761, 12.5683], 5);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-          attribution: "© OpenStreetMap contributors",
-        }).addTo(mapInstance.current);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap contributors" }).addTo(mapInstance.current);
         mapLayer.current = L.layerGroup().addTo(mapInstance.current);
       }
       mapLayer.current.clearLayers();
-      const located = (await Promise.all(stops.map(locateStop))).filter((stop): stop is LocatedStop => Boolean(stop));
+      const results = await Promise.all(stops.map(locateStop));
+      const located = results.reduce<LocatedStop[]>((result, stop) => { if (stop) result.push(stop); return result; }, []);
       setLocatedCount(located.length);
       located.forEach((stop, index) => {
         L.marker([stop.lat, stop.lon]).addTo(mapLayer.current).bindPopup(`<strong>${index + 1}. ${stop.name}</strong><br>${stop.notes || "Route stop"}`);
@@ -121,7 +135,7 @@ export default function TripMapPage() {
         mapInstance.current.fitBounds(L.latLngBounds(located.map((stop) => [stop.lat, stop.lon])), { padding: [40, 40], maxZoom: 12 });
         setMapMessage(located.length === stops.length ? `${located.length} route stops shown.` : `${located.length} of ${stops.length} stops found. Add a country or region to ambiguous place names.`);
       } else {
-        setMapMessage("None of the saved stop names could be located. Try adding a city and country.");
+        setMapMessage("The saved stops could not be located. Use names such as ‘Hamburg, Germany’ rather than general descriptions.");
       }
       window.setTimeout(() => mapInstance.current?.invalidateSize(), 100);
     } catch (error) {
