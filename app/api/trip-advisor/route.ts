@@ -45,6 +45,25 @@ function starterChange(module: ChangeModule): ProposedChange {
   return { module: "route", mode: "append", label: "Add route foundations", items: [] };
 }
 
+function specificTripPlace(value: unknown): string | null {
+  const text = String(value || "").trim();
+  if (!text) return null;
+  const lower = text.toLowerCase();
+  const vague = ["departure point", "final destination", "rest day", "flexible rest day", "fuel stop", "coffee stop", "meal stop", "overnight stop", "scenic stop", "day 1", "day 2", "day 3", "start", "finish"];
+  if (vague.some((label) => lower === label || lower.startsWith(`${label} `))) return null;
+  return text;
+}
+
+function sanitizeRouteChanges(suggestions: Suggestion[]): Suggestion[] {
+  return suggestions.map((suggestion) => {
+    if (suggestion.change?.module !== "route") return suggestion;
+    const validItems = suggestion.change.items.filter((item) => specificTripPlace(item.name));
+    if (validItems.length < 2 && suggestion.change.mode === "replace") return { ...suggestion, change: null, action: `${suggestion.action} Add or confirm specific map locations before importing.` };
+    if (!validItems.length) return { ...suggestion, change: null, action: `${suggestion.action} Add or confirm a specific city, landmark, address and country before importing.` };
+    return { ...suggestion, change: { ...suggestion.change, items: validItems } };
+  });
+}
+
 function localSuggestions(payload: AdvisorPayload): Suggestion[] {
   const trip = payload.trip;
   const route = asArray(payload.modules.route || payload.modules.map) as Array<{ name?: string; notes?: string }>;
@@ -54,8 +73,20 @@ function localSuggestions(payload: AdvisorPayload): Suggestion[] {
   const journal = asArray(payload.modules.journal);
   const suggestions: Suggestion[] = [];
 
-  if (route.length < 2) suggestions.push({ priority: "important", category: "route", title: "Build a usable route", detail: "The journey has fewer than two saved stops, so distance, overnight rhythm and daily riding load cannot be assessed yet.", action: "Add the departure point and final destination to the live route.", change: { module: "route", mode: "append", label: "Add route foundations", items: [{ name: String(trip.origin || "Departure point"), notes: "Journey starting point" }, { name: String(trip.destination || "Final destination"), notes: "Journey destination" }] } });
-  if (route.length > 8) suggestions.push({ priority: "recommended", category: "route", title: "Add a lighter riding day", detail: `You have ${route.length} route stops. A recovery or flexible day can protect the trip from fatigue and weather delays.`, action: "Add a flexible rest day to the itinerary.", change: { module: "route", mode: "append", label: "Add flexible rest day", items: [{ name: "Flexible rest day", notes: "Recovery, maintenance or weather buffer. Place this at the most demanding part of the route." }] } });
+  if (route.length < 2) {
+    const origin = specificTripPlace(trip.origin);
+    const destination = specificTripPlace(trip.destination);
+    suggestions.push({
+      priority: "important", category: "route", title: "Build a usable route",
+      detail: "The journey has fewer than two saved map locations, so road distance and riding time cannot be calculated yet.",
+      action: origin && destination ? "Import the confirmed origin and destination." : "Set a specific origin and destination using city and country names.",
+      change: origin && destination ? { module: "route", mode: "append", label: "Add confirmed route foundations", items: [
+        { name: origin, notes: "Journey starting location" },
+        { name: destination, notes: "Journey destination" },
+      ] } : null,
+    });
+  }
+  if (route.length > 8) suggestions.push({ priority: "recommended", category: "route", title: "Plan a lighter riding day", detail: `You have ${route.length} route stops. A recovery or flexible day can protect the trip from fatigue and weather delays.`, action: "Choose a real town already on or close to the route for the lighter overnight stop.", change: null });
 
   const unpacked = packing.filter((item) => !item.packed);
   if (!packing.length) suggestions.push({ priority: "important", category: "packing", title: "Start the motorcycle packing list", detail: "No packing data is saved for this trip yet.", action: "Import a practical starter checklist.", change: starterChange("packing") });
@@ -72,7 +103,7 @@ function localSuggestions(payload: AdvisorPayload): Suggestion[] {
   const destination = String(trip.destination || "your destination");
   const transport = String(trip.transport || "motorcycle");
   suggestions.push({ priority: "recommended", category: "timing", title: "Check conditions close to departure", detail: `Weather, road closures, ferry schedules and local requirements for ${destination} can change after the initial plan is created.`, action: `Recheck current conditions and ${transport} requirements one week before departure and again the evening before.`, change: null });
-  return suggestions.slice(0, 8);
+  return sanitizeRouteChanges(suggestions.slice(0, 8));
 }
 
 function ensureFocusedChange(suggestions: Suggestion[], payload: AdvisorPayload): Suggestion[] {
@@ -81,14 +112,7 @@ function ensureFocusedChange(suggestions: Suggestion[], payload: AdvisorPayload)
   if (!target || suggestions.some((item) => item.change?.module === target)) return suggestions;
   const labels = { packing: ["Prepare a practical packing checklist", "Import useful packing items"], budget: ["Build the trip budget", "Import the main cost categories"], documents: ["Prepare the travel wallet", "Import essential reference placeholders"] } as const;
   const [title, action] = labels[target];
-  const fallbackSuggestion: Suggestion = {
-    priority: "recommended",
-    category: target,
-    title,
-    detail: "The advisor did not return a safely importable change, so a validated starter structure is available instead.",
-    action,
-    change: starterChange(target),
-  };
+  const fallbackSuggestion: Suggestion = { priority: "recommended", category: target, title, detail: "The advisor did not return a safely importable change, so a validated starter structure is available instead.", action, change: starterChange(target) };
   return [fallbackSuggestion, ...suggestions].slice(0, 8);
 }
 
@@ -111,7 +135,7 @@ export async function POST(request: Request) {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL || "gpt-5",
-        instructions: `You are a cautious motorcycle trip-planning advisor. Analyse only the supplied trip. Suggestions may include an optional structured change that the traveller can explicitly review and apply. Never overwrite data silently. For route improvements, provide a complete replacement route only when supported by the saved trip. For packing, budget, documents and journal, provide append changes whenever a concrete safe import is possible. Every change item must contain all schema fields, including url. Fill unused strings with an empty string, unused numbers with 0 and packed with false. Set change to null only when changing saved data would be unsafe. Do not invent precise legal, weather, road, price or schedule facts.`,
+        instructions: `You are a cautious motorcycle trip-planning advisor. Analyse only the supplied trip. Suggestions may include an optional structured change that the traveller can explicitly review and apply. Never overwrite data silently. ROUTE IMPORT RULES: every route item name must be a real location that Google Maps can search directly. Write it as "Specific place or city, region if useful, country". For a hotel, landmark, ferry terminal or mountain pass, include the nearest city/region and country. Never use schedule labels such as Day 1, rest day, flexible day, scenic stop, fuel stop, coffee stop, overnight stop, start or finish as the name. Put the purpose, day number, overnight status and riding notes only in the notes field. Preserve confirmed existing locations. Do not invent an exact hotel, address or landmark when the trip data does not support it; use a real city and country instead. For route improvements, use replace only when returning a complete ordered itinerary with at least two specific locations. For packing, budget, documents and journal, provide append changes whenever a concrete safe import is possible. Every change item must contain all schema fields, including url. Fill unused strings with an empty string, unused numbers with 0 and packed with false. Set change to null when changing saved data would be unsafe. Do not invent precise legal, weather, road, price or schedule facts.`,
         input: JSON.stringify({ ...payload, modules: { ...payload.modules, route: payload.modules.route || payload.modules.map } }),
         text: { format: { type: "json_schema", name: "trip_advice", strict: true, schema: {
           type: "object", additionalProperties: false, required: ["suggestions"], properties: { suggestions: {
@@ -137,7 +161,8 @@ export async function POST(request: Request) {
     if (!response.ok) throw new Error(`OpenAI request failed: ${response.status}`);
     const data = await response.json();
     const parsed = JSON.parse(extractOutputText(data));
-    return NextResponse.json({ suggestions: ensureFocusedChange(parsed.suggestions, payload), source: "openai" });
+    const safeSuggestions = sanitizeRouteChanges(Array.isArray(parsed.suggestions) ? parsed.suggestions : []);
+    return NextResponse.json({ suggestions: ensureFocusedChange(safeSuggestions, payload), source: "openai" });
   } catch (error) {
     console.error("Trip advisor fallback:", error);
     return NextResponse.json({ suggestions: ensureFocusedChange(fallback, payload), source: "local", warning: "AI service was unavailable, so the built-in advisor was used." });
