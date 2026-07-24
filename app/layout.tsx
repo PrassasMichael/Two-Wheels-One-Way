@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./v2.css";
+import "./v2-polish.css";
 
 export const metadata: Metadata = {
   title: "Two Wheels, One Way",
