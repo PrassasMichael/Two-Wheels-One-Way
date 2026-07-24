@@ -14,8 +14,11 @@ import {
   PackageCheck,
   Pencil,
   Receipt,
+  RefreshCw,
   Route,
+  Sparkles,
   Users,
+  WandSparkles,
 } from "lucide-react";
 import type { Trip } from "@/lib/types";
 import { findCustomTrip } from "@/lib/client-trips";
@@ -36,6 +39,14 @@ const memories = [
   { title: "Sunset by the sea", label: "The way back", image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=85" },
 ];
 
+type Suggestion = {
+  priority: "important" | "recommended" | "optional";
+  category: "route" | "packing" | "budget" | "documents" | "timing" | "general";
+  title: string;
+  detail: string;
+  action: string;
+};
+
 function readModuleData(slug: string, module: string): unknown {
   try {
     const raw = localStorage.getItem(tripStorageKey(slug, module));
@@ -54,15 +65,54 @@ function hasData(value: unknown): boolean {
 export default function TripDashboardClient({ slug, initialTrip }: { slug: string; initialTrip: Trip | null }) {
   const [trip, setTrip] = useState<Trip | null>(initialTrip);
   const [moduleData, setModuleData] = useState<Record<string, unknown>>({});
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [advisorSource, setAdvisorSource] = useState<"openai" | "local" | null>(null);
+  const [advisorLoading, setAdvisorLoading] = useState(false);
+  const [advisorError, setAdvisorError] = useState("");
+  const [advisorFocus, setAdvisorFocus] = useState("complete trip review");
 
   useEffect(() => {
-    setTrip(findCustomTrip(slug) || initialTrip || null);
-    setModuleData(Object.fromEntries(modules.map((module) => [module.href, readModuleData(slug, module.href)])));
+    const currentTrip = findCustomTrip(slug) || initialTrip || null;
+    const data = Object.fromEntries(modules.map((module) => [module.href, readModuleData(slug, module.href)]));
+    setTrip(currentTrip);
+    setModuleData(data);
+    try {
+      const saved = JSON.parse(localStorage.getItem(tripStorageKey(slug, "advisor")) || "null");
+      if (saved?.suggestions) {
+        setSuggestions(saved.suggestions);
+        setAdvisorSource(saved.source || "local");
+      }
+    } catch {}
   }, [initialTrip, slug]);
 
   const completed = modules.filter((module) => hasData(moduleData[module.href])).map((module) => module.href);
   const progress = Math.round((completed.length / modules.length) * 100);
   const focusItems = useMemo(() => trip?.planningNeeded?.slice(0, 3) ?? ["Confirm exact dates", "Finish the route", "Review the packing list"], [trip]);
+
+  async function analyseTrip(focus = advisorFocus) {
+    if (!trip) return;
+    setAdvisorLoading(true);
+    setAdvisorError("");
+    setAdvisorFocus(focus);
+    const refreshedModules = Object.fromEntries(modules.map((module) => [module.href, readModuleData(slug, module.href)]));
+    setModuleData(refreshedModules);
+    try {
+      const response = await fetch("/api/trip-advisor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trip, modules: refreshedModules, focus }),
+      });
+      if (!response.ok) throw new Error("The advisor could not analyse this journey.");
+      const result = await response.json();
+      setSuggestions(result.suggestions || []);
+      setAdvisorSource(result.source || "local");
+      localStorage.setItem(tripStorageKey(slug, "advisor"), JSON.stringify({ suggestions: result.suggestions || [], source: result.source || "local", generatedAt: new Date().toISOString() }));
+    } catch (error) {
+      setAdvisorError(error instanceof Error ? error.message : "The advisor could not analyse this journey.");
+    } finally {
+      setAdvisorLoading(false);
+    }
+  }
 
   if (!trip) {
     return <main className="adventure-empty"><h1>Journey not found.</h1><Link href="/trips/new">Create a journey</Link></main>;
@@ -125,6 +175,30 @@ export default function TripDashboardClient({ slug, initialTrip }: { slug: strin
               </Link>;
             })}
           </div>
+        </section>
+
+        <section className="ai-advisor-panel">
+          <header>
+            <div className="ai-advisor-title"><span><Sparkles /></span><div><small>AI TRIP ADVISOR</small><h2>Suggestions for this journey</h2><p>Analyses only {trip.title} and the information saved inside its modules.</p></div></div>
+            <button type="button" onClick={() => analyseTrip()} disabled={advisorLoading}>{advisorLoading ? <RefreshCw className="advisor-spin" /> : <WandSparkles />}{advisorLoading ? "Analysing trip" : suggestions.length ? "Analyse again" : "Analyse my trip"}</button>
+          </header>
+
+          <div className="ai-focus-actions">
+            {["complete trip review", "improve my route", "check my packing", "review my budget", "find missing documents"].map((focus) => <button type="button" className={advisorFocus === focus ? "active" : ""} onClick={() => analyseTrip(focus)} disabled={advisorLoading} key={focus}>{focus}</button>)}
+          </div>
+
+          {advisorError && <p className="ai-advisor-error">{advisorError}</p>}
+          {!suggestions.length && !advisorLoading && <div className="ai-advisor-empty"><Sparkles /><div><strong>Your trip data is ready to review.</strong><p>The advisor will identify preparation gaps, route pressure, budget risks, missing references and useful next actions.</p></div></div>}
+
+          {!!suggestions.length && <div className="ai-suggestion-groups">
+            {(["important", "recommended", "optional"] as const).map((priority) => {
+              const items = suggestions.filter((suggestion) => suggestion.priority === priority);
+              if (!items.length) return null;
+              return <section className={`ai-priority-group ${priority}`} key={priority}><div className="ai-priority-heading"><span>{priority}</span><small>{items.length} suggestion{items.length === 1 ? "" : "s"}</small></div><div>{items.map((suggestion, index) => <article className="ai-suggestion" key={`${suggestion.title}-${index}`}><span className="ai-category">{suggestion.category}</span><h3>{suggestion.title}</h3><p>{suggestion.detail}</p><strong><ArrowRight /> {suggestion.action}</strong></article>)}</div></section>;
+            })}
+          </div>}
+
+          {advisorSource && <footer><span><Sparkles /> {advisorSource === "openai" ? "Generated with OpenAI" : "Generated by the built-in trip analysis engine"}</span><small>Current legal, weather, road, price and schedule information should always be verified before departure.</small></footer>}
         </section>
 
         <section className="adventure-memories">
