@@ -4,8 +4,20 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { ArrowLeft, BookOpen, Plus, Trash2 } from "lucide-react";
+import "../../../packing/packing.css";
 
 type Entry = { id: string; title: string; date: string; body: string };
+
+function makeId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return `entry-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function isEntry(value: unknown): value is Entry {
+  if (!value || typeof value !== "object") return false;
+  const entry = value as Partial<Entry>;
+  return typeof entry.id === "string" && typeof entry.title === "string" && typeof entry.date === "string" && typeof entry.body === "string";
+}
 
 export default function TripJournalPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -18,21 +30,28 @@ export default function TripJournalPage() {
 
   useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      if (Array.isArray(saved)) setEntries(saved);
-    } catch {}
+      const saved: unknown = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      if (Array.isArray(saved)) setEntries(saved.filter(isEntry));
+    } catch {
+      setEntries([]);
+    }
     setLoaded(true);
   }, [storageKey]);
 
   useEffect(() => {
-    if (loaded) localStorage.setItem(storageKey, JSON.stringify(entries));
+    if (!loaded) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(entries));
+    } catch {}
   }, [entries, loaded, storageKey]);
 
   function addEntry(event: FormEvent) {
     event.preventDefault();
     if (!title.trim() || !body.trim()) return;
-    setEntries((current) => [{ id: crypto.randomUUID(), title: title.trim(), date, body: body.trim() }, ...current]);
-    setTitle(""); setDate(""); setBody("");
+    setEntries((current) => [{ id: makeId(), title: title.trim(), date, body: body.trim() }, ...current]);
+    setTitle("");
+    setDate("");
+    setBody("");
   }
 
   return (
@@ -49,7 +68,7 @@ export default function TripJournalPage() {
         </form>
         <div className="packing-lists">
           <div className="workspace-heading"><BookOpen size={23} /><div><p className="eyebrow dark">TRIP STORY</p><h2>{entries.length} entries</h2></div></div>
-          {entries.map((entry) => <article className="packing-category" key={entry.id}><header><h3>{entry.title}</h3><span>{entry.date || "Undated"}</span></header><p style={{ whiteSpace: "pre-wrap" }}>{entry.body}</p><button type="button" className="packing-delete" onClick={() => setEntries((current) => current.filter((item) => item.id !== entry.id))}><Trash2 size={16} /> Remove</button></article>)}
+          {entries.map((entry) => <article className="packing-category" key={entry.id}><header><h3>{entry.title}</h3><span>{entry.date || "Undated"}</span></header><p className="workspace-card-copy" style={{ whiteSpace: "pre-wrap" }}>{entry.body}</p><div className="workspace-card-actions"><button type="button" onClick={() => setEntries((current) => current.filter((item) => item.id !== entry.id))}><Trash2 size={16} /> Remove</button></div></article>)}
           {!entries.length && <div className="empty-workspace"><p>This journey does not have any journal entries yet.</p></div>}
         </div>
       </section>
