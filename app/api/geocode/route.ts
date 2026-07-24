@@ -4,7 +4,7 @@ export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("q")?.trim();
 
   if (!query || query.length < 2) {
-    return NextResponse.json({ results: [] });
+    return NextResponse.json({ error: "Missing place name.", results: [] }, { status: 400 });
   }
 
   try {
@@ -13,32 +13,46 @@ export async function GET(request: NextRequest) {
     url.searchParams.set("format", "jsonv2");
     url.searchParams.set("addressdetails", "1");
     url.searchParams.set("limit", "6");
-    url.searchParams.set("countrycodes", "gr");
 
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Two-Wheels-One-Way/1.0 travel-blog",
+        Accept: "application/json",
+        "User-Agent": "Two-Wheels-One-Way/1.0 travel-planner",
         "Accept-Language": "en",
       },
       next: { revalidate: 86400 },
     });
 
     if (!response.ok) {
-      return NextResponse.json({ results: [] }, { status: 502 });
+      return NextResponse.json({ error: "Place lookup failed.", results: [] }, { status: 502 });
     }
 
-    const data = await response.json();
-    const results = data.map((item: any) => ({
-      id: String(item.place_id),
-      name: item.name || item.display_name.split(",")[0],
-      displayName: item.display_name,
-      lat: Number(item.lat),
-      lng: Number(item.lon),
-      type: item.type || item.category || "place",
-    }));
+    const data: unknown = await response.json();
+    const source = Array.isArray(data) ? data : [];
+    const results = source.reduce<Array<{ id: string; name: string; displayName: string; lat: number; lng: number; lon: number; type: string }>>((items, raw) => {
+      if (!raw || typeof raw !== "object") return items;
+      const item = raw as Record<string, unknown>;
+      const lat = Number(item.lat);
+      const lon = Number(item.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return items;
+      const displayName = String(item.display_name || query);
+      items.push({
+        id: String(item.place_id || `${lat}-${lon}`),
+        name: String(item.name || displayName.split(",")[0]),
+        displayName,
+        lat,
+        lng: lon,
+        lon,
+        type: String(item.type || item.category || "place"),
+      });
+      return items;
+    }, []);
 
-    return NextResponse.json({ results });
+    const first = results[0];
+    if (!first) return NextResponse.json({ error: "Place not found.", results: [] }, { status: 404 });
+
+    return NextResponse.json({ lat: first.lat, lon: first.lon, displayName: first.displayName, results });
   } catch {
-    return NextResponse.json({ results: [] }, { status: 500 });
+    return NextResponse.json({ error: "Place lookup is unavailable.", results: [] }, { status: 502 });
   }
 }
