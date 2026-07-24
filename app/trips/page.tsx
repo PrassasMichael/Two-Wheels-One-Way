@@ -6,41 +6,41 @@ export default function TripsPage() {
   const trips = getTrips();
 
   return (
-    <main className="archive-page">
-      <header className="archive-page-header">
+    <main className="v2-page">
+      <header className="v2-page-header">
         <Link href="/"><ArrowLeft size={17} /> Back home</Link>
+        <span className="v2-brand">Journey archive</span>
       </header>
 
-      <section className="archive-page-hero compact-archive-hero">
-        <p className="eyebrow dark">JOURNEY ARCHIVE</p>
+      <section className="v2-page-intro">
+        <p className="v2-kicker">All journeys</p>
         <h1>Every trip gets<br />its own world.</h1>
-        <p>Plans, routes, packing, budgets and memories remain separate while living inside one shared travel archive.</p>
+        <p>Routes, packing, costs, documents and memories stay together inside one private archive — separate when they need to be, connected by one familiar system.</p>
       </section>
 
-      <section className="journey-overview">
-        <div className="section-kicker">
-          <p className="eyebrow dark">ALL JOURNEYS</p>
-          <span className="status">{trips.length} total</span>
-        </div>
-        <div className="chapter-grid archive-feature-grid">
-          {trips.map((trip) => (
-            <Link className="archive-feature-card" href={`/trips/${trip.slug}`} key={trip.id}>
-              <div className="chapter-top"><span>{trip.year}</span><ArrowRight size={22} /></div>
-              <p className="eyebrow dark">{trip.status}</p>
-              <h3>{trip.title}</h3>
-              <p>{trip.summary}</p>
-              <div className="trip-meta-line">
-                <span><CalendarDays size={16} /> {trip.year}</span>
-                <span><MapPin size={16} /> {trip.destination}</span>
-              </div>
-            </Link>
-          ))}
-          <article className="archive-feature-card">
-            <div className="chapter-top"><span>NEW</span><Plus size={22} /></div>
-            <h3>Create another journey</h3>
-            <p>The universal structure is ready. A trip-creation form will be the next management layer.</p>
-          </article>
-        </div>
+      <section className="v2-journey-grid">
+        {trips.map((trip) => (
+          <Link className="v2-journey-card" href={`/trips/${trip.slug}`} key={trip.id}>
+            <div className="v2-card-link" style={{ marginTop: 0 }}>
+              <span>{trip.status.toUpperCase()}</span>
+              <span>{trip.year}</span>
+            </div>
+            <h2>{trip.title}</h2>
+            <p>{trip.summary}</p>
+            <div className="v2-meta">
+              <span className="v2-chip"><CalendarDays size={15} /> {trip.month} {trip.year}</span>
+              <span className="v2-chip"><MapPin size={15} /> {trip.destination}</span>
+            </div>
+            <span className="v2-card-link"><span>Open journey</span><ArrowRight size={18} /></span>
+          </Link>
+        ))}
+
+        <article className="v2-journey-card v2-new-card">
+          <div className="v2-card-link" style={{ marginTop: 0 }}><span>NEW JOURNEY</span><Plus size={19} /></div>
+          <h2>Create the next chapter.</h2>
+          <p>The interface is ready for a trip-creation flow that will generate a complete isolated workspace automatically.</p>
+          <span className="v2-card-link"><span>Creation tool comes next</span><ArrowRight size={18} /></span>
+        </article>
       </section>
     </main>
   );
