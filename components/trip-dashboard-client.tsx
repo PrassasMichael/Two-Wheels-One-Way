@@ -31,7 +31,7 @@ export default function TripDashboardClient({ slug, initialTrip }: { slug: strin
   const [completed, setCompleted] = useState<string[]>([]);
 
   useEffect(() => {
-    setTrip(initialTrip || findCustomTrip(slug) || null);
+    setTrip(findCustomTrip(slug) || initialTrip || null);
     setCompleted(modules.filter((module) => hasData(slug, module.href)).map((module) => module.href));
   }, [initialTrip, slug]);
 
