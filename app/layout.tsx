@@ -6,6 +6,7 @@ import "./trip-management.css";
 import "./adventure-dashboard.css";
 import "./adventure-workspaces.css";
 import "./adventure-landing.css";
+import "./ai-advisor.css";
 
 export const metadata: Metadata = {
   title: "Two Wheels, One Way",
