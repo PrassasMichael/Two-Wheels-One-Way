@@ -1,0 +1,174 @@
+/* Unified dark adventure interface for all trip tools */
+.archive-page.workspace-page,
+.archive-page.packing-page {
+  --aw-bg:#090d10;
+  --aw-panel:#11171c;
+  --aw-panel-2:#151c22;
+  --aw-line:rgba(255,255,255,.09);
+  --aw-muted:#96a0a8;
+  --aw-orange:#ff702a;
+  min-height:100vh;
+  padding-left:220px;
+  color:#f5f7f8;
+  background:
+    radial-gradient(circle at 82% 5%,rgba(255,112,42,.10),transparent 24%),
+    linear-gradient(180deg,#0b1014,#080b0e 68%);
+}
+
+.archive-page.workspace-page::before {
+  content:"TWO WHEELS\A ONE WAY";
+  white-space:pre;
+  position:fixed;
+  z-index:1;
+  inset:0 auto 0 0;
+  width:220px;
+  padding:42px 30px;
+  box-sizing:border-box;
+  color:white;
+  font-weight:800;
+  font-size:15px;
+  line-height:1.35;
+  letter-spacing:.08em;
+  background:linear-gradient(180deg,#0b1218,#081017);
+  border-right:1px solid var(--aw-line);
+}
+
+.archive-page-header {
+  width:auto!important;
+  max-width:none!important;
+  min-height:76px!important;
+  margin:0!important;
+  padding:0 42px!important;
+  border-bottom:1px solid var(--aw-line)!important;
+  background:rgba(8,12,15,.76);
+  backdrop-filter:blur(18px);
+  position:relative;
+  z-index:5;
+}
+.archive-page-header a,.archive-header-links a {color:#d8dde0!important;}
+.archive-header-links {display:flex;gap:24px;}
+.archive-header-links a:hover,.archive-page-header>a:hover {color:var(--aw-orange)!important;}
+
+.archive-page-hero.compact-archive-hero {
+  width:auto!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:70px 42px 52px!important;
+  min-height:340px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  background:
+    linear-gradient(90deg,rgba(7,11,14,.97) 0%,rgba(7,11,14,.72) 52%,rgba(7,11,14,.18)),
+    url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=85') center/cover;
+  border-bottom:1px solid var(--aw-line);
+}
+.archive-page-hero h1 {color:white!important;font-size:clamp(48px,6vw,86px)!important;line-height:.9!important;margin:15px 0 20px!important;}
+.archive-page-hero p {color:#c1c8cd!important;max-width:680px;line-height:1.75;}
+.eyebrow.dark {color:var(--aw-orange)!important;letter-spacing:.16em;font-size:11px;font-weight:800;}
+
+.packing-overview {
+  width:auto!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:28px 42px!important;
+  display:grid!important;
+  grid-template-columns:1fr auto!important;
+  background:#0d1317!important;
+  border-bottom:1px solid var(--aw-line);
+}
+.packing-progress-copy h2 {color:white!important;font-size:34px!important;margin:8px 0!important;}
+.packing-progress-copy p {color:var(--aw-muted)!important;}
+.packing-progress {display:flex!important;align-items:center!important;gap:22px!important;}
+.packing-progress-ring {background:conic-gradient(var(--aw-orange) var(--progress),#263039 0)!important;color:white!important;box-shadow:inset 0 0 0 9px #12191e!important;}
+.packing-progress button {color:#d8dde0!important;border:1px solid var(--aw-line)!important;background:#151c22!important;border-radius:12px!important;}
+
+.packing-workspace {
+  width:auto!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:30px 42px 80px!important;
+  grid-template-columns:minmax(300px,390px) minmax(0,1fr)!important;
+  gap:24px!important;
+}
+.packing-add-form,.packing-lists {
+  border:1px solid var(--aw-line)!important;
+  background:linear-gradient(180deg,var(--aw-panel-2),var(--aw-panel))!important;
+  border-radius:18px!important;
+  box-shadow:0 24px 60px rgba(0,0,0,.28)!important;
+}
+.packing-add-form {padding:25px!important;align-self:start;position:sticky;top:94px;}
+.packing-lists {padding:25px!important;}
+.workspace-heading {color:white!important;border-bottom:1px solid var(--aw-line);padding-bottom:18px;margin-bottom:20px;}
+.workspace-heading>svg {color:var(--aw-orange)!important;}
+.workspace-heading h2 {color:white!important;font-size:28px!important;}
+
+.packing-add-form label {color:#c8ced2!important;font-size:12px!important;text-transform:uppercase;letter-spacing:.08em;}
+.packing-add-form input,.packing-add-form select,.trip-form input,.trip-form select,.trip-form textarea {
+  color:white!important;
+  background:#0b1115!important;
+  border:1px solid rgba(255,255,255,.11)!important;
+  border-radius:11px!important;
+  min-height:48px;
+}
+.packing-add-form input:focus,.packing-add-form select:focus,.trip-form input:focus,.trip-form select:focus,.trip-form textarea:focus {outline:none!important;border-color:var(--aw-orange)!important;box-shadow:0 0 0 3px rgba(255,112,42,.12)!important;}
+.packing-add-form small {color:#74808a!important;}
+.primary-button,.trip-submit {background:var(--aw-orange)!important;color:white!important;border:0!important;border-radius:11px!important;box-shadow:0 10px 25px rgba(255,112,42,.18)!important;}
+.primary-button:hover,.trip-submit:hover {filter:brightness(1.08);transform:translateY(-1px);}
+
+.packing-category {
+  position:relative;
+  color:white!important;
+  background:#0d1419!important;
+  border:1px solid var(--aw-line)!important;
+  border-radius:14px!important;
+  overflow:hidden;
+  margin-bottom:13px!important;
+}
+.packing-category:hover {border-color:rgba(255,112,42,.42)!important;}
+.packing-category header {background:#121a20!important;border-bottom:1px solid var(--aw-line)!important;}
+.packing-category h3 {color:white!important;}
+.packing-category header span {color:var(--aw-orange)!important;background:rgba(255,112,42,.09)!important;}
+.packing-item {border-top:1px solid rgba(255,255,255,.06)!important;}
+.packing-toggle {color:#d9dee1!important;}
+.packing-item.packed .packing-toggle {color:#768189!important;}
+.packing-item.packed svg {color:#62c985!important;}
+.packing-delete,.workspace-card-actions button {color:#9ca6ad!important;background:#151d23!important;border:1px solid var(--aw-line)!important;border-radius:9px!important;}
+.packing-delete:hover,.workspace-card-actions button:hover {color:white!important;border-color:rgba(255,112,42,.45)!important;}
+.workspace-card-copy {color:var(--aw-muted)!important;}
+.budget-values {display:grid!important;grid-template-columns:repeat(2,1fr);gap:12px;padding:18px!important;}
+.budget-values span {padding:15px;background:#121a20;border:1px solid var(--aw-line);border-radius:11px;}
+.budget-values small {color:var(--aw-muted)!important;}
+.budget-values strong {color:white!important;}
+.empty-workspace {color:var(--aw-muted)!important;border:1px dashed rgba(255,255,255,.13)!important;background:#0d1419!important;border-radius:14px!important;}
+
+/* Trip editor and archive alignment */
+.trip-editor-page,.v2-page {background:#090d10!important;color:white!important;}
+.trip-form-shell,.trip-form {background:#11171c!important;border-color:rgba(255,255,255,.09)!important;color:white!important;}
+.trip-form label {color:#c9d0d4!important;}
+.v2-page-header {border-color:rgba(255,255,255,.09)!important;color:#e7ebed!important;}
+.v2-page-header a,.v2-brand {color:#e7ebed!important;}
+.v2-page-intro h1 {color:white!important;}
+.v2-page-intro>p {color:#919ca4!important;}
+.v2-new-card {background:#11171c!important;color:white!important;border-color:rgba(255,255,255,.14)!important;}
+.v2-new-card p {color:#929da5!important;}
+
+@media(max-width:900px){
+  .archive-page.workspace-page,.archive-page.packing-page {padding-left:0;padding-bottom:74px;}
+  .archive-page.workspace-page::before {display:none;}
+  .archive-page-header {padding:0 20px!important;}
+  .archive-header-links {gap:12px;font-size:12px;}
+  .archive-page-hero.compact-archive-hero {padding:55px 22px 38px!important;min-height:300px;}
+  .packing-overview {padding:24px 22px!important;grid-template-columns:1fr!important;gap:20px;}
+  .packing-workspace {padding:22px 22px 90px!important;grid-template-columns:1fr!important;}
+  .packing-add-form {position:static;}
+}
+
+@media(max-width:560px){
+  .archive-page-header {min-height:64px!important;}
+  .archive-header-links a:last-child {display:none;}
+  .archive-page-hero h1 {font-size:48px!important;}
+  .packing-workspace,.packing-overview {padding-left:15px!important;padding-right:15px!important;}
+  .packing-add-form,.packing-lists {padding:18px!important;border-radius:15px!important;}
+  .budget-values {grid-template-columns:1fr;}
+}
