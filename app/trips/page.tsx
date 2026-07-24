@@ -9,11 +9,18 @@ import { readCustomTrips } from "@/lib/client-trips";
 
 const builtInTrips = tripsData as Trip[];
 
+function mergedTrips(): Trip[] {
+  const map = new Map<string, Trip>();
+  builtInTrips.forEach((trip) => map.set(trip.slug, trip));
+  readCustomTrips().forEach((trip) => map.set(trip.slug, trip));
+  return Array.from(map.values()).sort((a, b) => b.year - a.year);
+}
+
 export default function TripsPage() {
   const [trips, setTrips] = useState<Trip[]>(builtInTrips);
 
   useEffect(() => {
-    const sync = () => setTrips([...readCustomTrips(), ...builtInTrips]);
+    const sync = () => setTrips(mergedTrips());
     sync();
     window.addEventListener("trip-registry-updated", sync);
     window.addEventListener("storage", sync);
